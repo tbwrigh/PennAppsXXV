@@ -1,18 +1,26 @@
 import json
-import boto3
 import os
+import jwt
+import boto3
+import uuid
 
-dynamodb = boto3.client('dynamodb')
-s3 = boto3.client('s3')
-
-USER_TABLE = os.getenv('USER_TABLE')
-PROFILE_PIC_BUCKET = os.getenv('PROFILE_PIC_BUCKET')
+dynamodb = boto3.resource('dynamodb')
+users_table = dynamodb.Table('pennapps-user-table')
 
 def lambda_handler(event, context):
-    http_method = event['httpMethod']
+    if 'httpMethod' not in event:
+        return {
+            'statusCode': 405,
+            'body': json.dumps('Method Not Allowed')
+        }
     
+    http_method = event['httpMethod']
+
     if http_method == 'GET':
-        return get_user(event)
+        if 'Authorization' in event['headers']:
+            return get_user_private(event)
+        else:
+            return get_user_public(event)
     elif http_method == 'PUT':
         return put_user(event)
     else:
@@ -21,72 +29,129 @@ def lambda_handler(event, context):
             'body': json.dumps('Method Not Allowed')
         }
 
-def get_user(event):
-    user_id = event['queryStringParameters']['user_id']
-    
-    # Get user data from DynamoDB
-    dynamo_response = dynamodb.get_item(
-        TableName=USER_TABLE,
-        Key={'user_id': {'S': user_id}}
-    )
-    
-    if 'Item' not in dynamo_response:
+def get_user_private(event):
+    auth_token = event['headers']['Authorization']
+    decoded_token = decode_jwt_token(auth_token)
+
+    if 'email' not in decoded_token:
         return {
-            'statusCode': 404,
-            'body': json.dumps('User not found')
+            'statusCode': 401,
+            'body': json.dumps({'message': 'Unauthorized - email not found in token'})
+        }
+
+    email = decoded_token['email']
+
+    response = users_table.get_item(Key={'email': email})
+
+    if 'Item' in response:
+        user = response['Item']
+        return {
+            'statusCode': 200,
+            'body': json.dumps(user)
+        }
+
+    new_user = {
+        'email': email,
+        'username': email,
+        'profile_pic': '',
+        'meetings': [],
+        'id': str(uuid.uuid4())
+    }
+
+    users_table.put_item(Item=new_user)
+
+    return {
+            'statusCode': 200,
+            'body': json.dumps(new_user)
+        }
+
+def get_user_public(event):
+    query_params = event.get('queryStringParameters', {})
+    user_id = query_params.get('id')
+    
+    if not user_id:
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'message': 'Bad Request - ID is required'})
         }
     
-    user_data = dynamo_response['Item']
-    username = user_data['username']['S']
+    # Check if user exists in DynamoDB
+    response = users_table.get_item(Key={'id': user_id})
     
-    # Get profile picture URL from S3
-    profile_pic_key = user_data['profile_pic_key']['S']
-    profile_pic_url = s3.generate_presigned_url(
-        'get_object',
-        Params={'Bucket': PROFILE_PIC_BUCKET, 'Key': profile_pic_key},
-        ExpiresIn=3600
-    )
+    if 'Item' not in response:
+        return {
+            'statusCode': 404,
+            'body': json.dumps({'message': 'User not found'})
+        }
     
+    user = response['Item']
     return {
         'statusCode': 200,
         'body': json.dumps({
-            'username': username,
-            'profile_pic_url': profile_pic_url
+            'username': user['username'],
+            'profile_pic': user.get('profile_pic', '')
         })
     }
 
 def put_user(event):
-    body = json.loads(event['body'])
-    user_id = body['user_id']
+    auth_token = event['headers']['Authorization']
+    decoded_token = decode_jwt_token(auth_token)
+
+    if 'email' not in decoded_token:
+        return {
+            'statusCode': 401,
+            'body': json.dumps({'message': 'Unauthorized - email not found in token'})
+        }
+
+    email = decoded_token['email']
+
+    response = users_table.get_item(Key={'email': email})
+
+    if 'Item' not in response:
+        return {
+            'statusCode': 404,
+            'body': json.dumps({'message': 'User not found'})
+        }
     
+    user = response['Item']
+    
+    body = json.loads(event['body'])
+
     update_expression = "SET "
     expression_attribute_values = {}
-    
+
     if 'username' in body:
         update_expression += "username = :u,"
         expression_attribute_values[':u'] = {'S': body['username']}
     
-    if 'profile_pic' in body:
-        profile_pic_key = f"{user_id}/profile_pic.jpg"
-        s3.put_object(
-            Bucket=PROFILE_PIC_BUCKET,
-            Key=profile_pic_key,
-            Body=body['profile_pic']
-        )
-        update_expression += "profile_pic_key = :p,"
-        expression_attribute_values[':p'] = {'S': profile_pic_key}
-    
-    # Remove the trailing comma
     update_expression = update_expression.rstrip(',')
-    
     dynamodb.update_item(
-        TableName=USER_TABLE,
-        Key={'user_id': {'S': user_id}},
+        TableName=users_table,
+        Key={'user_id': {'S': user['id']}},
         UpdateExpression=update_expression,
-        ExpressionAttributeValues=expression_attribute_values
-    )
+        ExpressionAttributeValues=expression_attribute_values)
     
     return {
         'statusCode': 200,
         'body': json.dumps('User updated successfully')
     }
+
+def decode_jwt_token(token):
+    header = jwt.get_unverified_header(token)
+    
+    # Replace this with the actual public key URL for your Cognito pool
+    jwks_url = os.environ['COGNITO_JWKS_URL']
+
+    # Fetch the public key and decode the token
+    jwks_client = jwt.PyJWKClient(jwks_url)
+    signing_key = jwks_client.get_signing_key_from_jwt(token)
+    
+    payload = jwt.decode(
+        token,
+        signing_key.key,
+        algorithms=["RS256"],
+        audience=os.environ['COGNITO_APP_CLIENT_ID'],
+        options={"verify_exp": True}
+    )
+    
+    return payload

@@ -2,9 +2,13 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# S3 Bucket for profile pictures
 resource "aws_s3_bucket" "user_profile_bucket" {
-  bucket = "pennapps-user-profile-picture-bucket"
+  bucket = "pennapps-profile-picture-bucket"
+
+  # Prevent the bucket from being destroyed
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # DynamoDB table for user information
@@ -66,6 +70,13 @@ resource "aws_iam_role_policy_attachment" "lambda_execution_policy_attachment" {
   policy_arn = aws_iam_policy.lambda_dynamodb_s3_policy.arn
 }
 
+resource "aws_lambda_layer_version" "pyjwt_layer" {
+  layer_name          = "pkgs"
+  filename            = "${path.module}/../lambdas/layers/pkgs/pkgs.zip"
+  compatible_runtimes = ["python3.12"]
+  source_code_hash    = filebase64sha256("${path.module}/../lambdas/layers/pkgs/pkgs.zip")
+}
+
 # Generate Lambda function zip from source
 data "archive_file" "lambda_zip" {
   type        = "zip"
@@ -83,6 +94,8 @@ resource "aws_lambda_function" "user_profile_lambda" {
   memory_size   = 128
 
   filename      = data.archive_file.lambda_zip.output_path
+
+  layers        = [aws_lambda_layer_version.pyjwt_layer.arn]
 }
 
 # Import the existing Cognito User Pool created by Amplify
@@ -96,6 +109,7 @@ resource "aws_api_gateway_rest_api" "user_api" {
   description = "API to handle user profile (GET, PUT)."
 }
 
+# /user resource (both public and authenticated GET)
 resource "aws_api_gateway_resource" "user" {
   rest_api_id = aws_api_gateway_rest_api.user_api.id
   parent_id   = aws_api_gateway_rest_api.user_api.root_resource_id
@@ -111,12 +125,17 @@ resource "aws_api_gateway_authorizer" "cognito_authorizer" {
   provider_arns   = [data.aws_cognito_user_pool.amplify_user_pool.arn]  # Reference to the Cognito User Pool
 }
 
-
+# Single GET method on /user
 resource "aws_api_gateway_method" "get_user" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
   resource_id   = aws_api_gateway_resource.user.id
   http_method   = "GET"
-  authorization = "NONE"
+  authorization = "NONE"  # No authorization for public GET
+
+  # Allow an optional 'public' query parameter
+  request_parameters = {
+    "method.request.querystring.public": false
+  }
 }
 
 # PUT method now requires Cognito User Pool authentication
