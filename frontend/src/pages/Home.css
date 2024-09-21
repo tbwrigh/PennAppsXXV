@@ -5,10 +5,12 @@
     justify-content: space-between;
     align-items: center;
     background-color: #f0f2f5;
+    text-align: center;
+    gap: 10px 20px;
   }
   
   .heading-container {
-    margin-top: 5vh;
+    margin-top: 5px;
   }
 
   .subheading-container {
@@ -18,11 +20,11 @@
   }
 
   .login-container {
-    height: 40vh;
-    display: flex;
+    /* height: 40vh; */
+    /* display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
+    flex-direction: column; */
     margin-bottom: 20vh;
-    width: 100%;
+    /* width: 100%; */
   }

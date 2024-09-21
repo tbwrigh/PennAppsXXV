@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button, Form, Input, Card } from 'antd';
 import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
+import './SignUpForm.css';
 
 const SignUpForm: React.FC = () => {
   const onFinish = (values: any) => {
@@ -12,7 +13,9 @@ const SignUpForm: React.FC = () => {
   };
 
   return (
-    <Card title="Sign Up" style={{ width: 300, margin: '100px auto' }}>
+    <div className="wrapper">
+    <div className="item">
+    <Card title="Sign Up" className="signup-card">
       <Form
         name="Sign Up"
         onFinish={onFinish}
@@ -50,10 +53,12 @@ const SignUpForm: React.FC = () => {
           <Button type="primary" htmlType="submit" block>
             Sign Up
           </Button>
-          <a href="/">Or log in</a>
+          <a href="/" className="login-button">Or log in</a>
         </Form.Item>
       </Form>
     </Card>
+    </div>
+    </div>
   );
 };
 

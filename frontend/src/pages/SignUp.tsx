@@ -4,9 +4,7 @@ import './SignUp.css';
 
 const Home: React.FC = () => {
   return (
-    <div className="signup-container">
-      <SignUpForm />
-    </div>
+    <SignUpForm />
   );
 };
 
