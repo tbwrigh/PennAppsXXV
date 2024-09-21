@@ -21,7 +21,10 @@ const Home: React.FC = () => {
 
   return (
     <div className="user-home">
-      <h1>Meetings</h1>
+      <div className="meeting-header">
+        <h1>Meetings</h1>
+        <Button type="primary" className="new-meeting-button">New Meeting</Button>
+      </div>
       <List
         className="meeting-list"
         dataSource={meetings}

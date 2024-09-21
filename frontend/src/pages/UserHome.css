@@ -1,51 +1,70 @@
+/* Container for the header and button */
+.meeting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* Ensure vertical alignment */
+  width: 100%;
+  max-width: 600px; /* Match the card width */
+  margin-bottom: 20px;
+}
+
+/* Adjust the h1 styling to align with the button */
+.meeting-header h1 {
+  margin: 0;
+  font-size: 24px; /* Set your desired font size */
+  line-height: 1.6; /* Slightly taller line height to balance alignment */
+}
+
+/* Adjust the button to vertically align with the heading */
+.new-meeting-button {
+  padding: 0 16px; /* Set the padding for the button */
+  display: flex;
+  align-items: center; /* Vertically center the button text */
+  height: 40px; /* Set a fixed height to ensure alignment */
+}
+
+/* Wrapper for the home content */
 .user-home {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-  }
-  
-  .user-home h1 {
-    text-align: center;
-    font-size: 24px;
-    margin-bottom: 20px;
-  }
-  
-  /* Make sure the list is centered */
-  .meeting-list {
-    width: 100%;
-    max-width: 600px;
-  }
-  
-  /* Center the list items */
-  .list-item {
-    display: flex;
-    justify-content: center;
-  }
-  
-  /* Set the card to take full width within its container */
-  .meeting-card {
-    width: 100%;
-  }
-  
-  /* Content inside the card */
-  .card-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .meeting-title {
-    font-size: 18px;
-    font-weight: 500;
-    text-align: left;
-  }
-  
-  .arrow-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: auto;
-    color: #1890ff;
-  }
-  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+/* Meeting list container */
+.meeting-list {
+  width: 100%;
+  max-width: 600px;
+}
+
+/* Center the list items */
+.list-item {
+  display: flex;
+  justify-content: center;
+}
+
+/* Set the card to take full width within its container */
+.meeting-card {
+  width: 100%;
+}
+
+/* Content inside the card */
+.card-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.meeting-title {
+  font-size: 18px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.arrow-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  color: #1890ff;
+}
