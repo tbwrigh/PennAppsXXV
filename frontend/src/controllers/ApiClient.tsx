@@ -4,7 +4,7 @@ export abstract class ApiClient {
     protected baseUrl: string | undefined;
   
     constructor() {
-      this.baseUrl = process.env.API_URL;
+      this.baseUrl = import.meta.env.VITE_API_URL;
     }
   
     // Fetch the JWT token for authenticated requests

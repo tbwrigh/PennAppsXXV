@@ -2,6 +2,11 @@ provider "aws" {
   region = "us-east-1"
 }
 
+# Import the existing Cognito User Pool created by Amplify
+data "aws_cognito_user_pool" "amplify_user_pool" {
+  user_pool_id = "us-east-1_uw33uGxTn"
+}
+
 resource "aws_s3_bucket" "user_profile_bucket" {
   bucket = "pennapps-profile-picture-bucket"
 
@@ -20,6 +25,21 @@ resource "aws_dynamodb_table" "user_table" {
   attribute {
     name = "user_id"
     type = "S"
+  }
+
+  attribute {
+    name = "email"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name               = "EmailIndex"
+    hash_key           = "email"
+    projection_type    = "ALL"
+  }
+
+  tags = {
+    Name = "UserTable"
   }
 }
 
@@ -64,10 +84,34 @@ resource "aws_iam_policy" "lambda_dynamodb_s3_policy" {
   })
 }
 
+resource "aws_iam_policy" "lambda_logging_policy" {
+  name = "lambda_logging_policy"
+  policy = jsonencode({
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        "Resource": "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
+}
+
+
 # Attach the policy to the Lambda execution role
 resource "aws_iam_role_policy_attachment" "lambda_execution_policy_attachment" {
   role       = aws_iam_role.lambda_execution_role.name
   policy_arn = aws_iam_policy.lambda_dynamodb_s3_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_logging_policy_attachment" {
+  role       = aws_iam_role.lambda_execution_role.name
+  policy_arn = aws_iam_policy.lambda_logging_policy.arn
 }
 
 resource "aws_lambda_layer_version" "pyjwt_layer" {
@@ -96,11 +140,17 @@ resource "aws_lambda_function" "user_profile_lambda" {
   filename      = data.archive_file.lambda_zip.output_path
 
   layers        = [aws_lambda_layer_version.pyjwt_layer.arn]
+
+  environment {
+    variables = {
+      "COGNITO_JWKS_URL" = "https://cognito-idp.us-east-1.amazonaws.com/${data.aws_cognito_user_pool.amplify_user_pool.id}/.well-known/jwks.json"
+    }
+  }
 }
 
-# Import the existing Cognito User Pool created by Amplify
-data "aws_cognito_user_pool" "amplify_user_pool" {
-  user_pool_id = "us-east-1_uw33uGxTn"
+resource "aws_cloudwatch_log_group" "lambda_log_group" {
+  name              = "/aws/lambda/${aws_lambda_function.user_profile_lambda.function_name}"
+  retention_in_days = 7  # Optional: Set how long you want the logs to be retained
 }
 
 # API Gateway for Lambda
@@ -176,6 +226,80 @@ resource "aws_lambda_permission" "allow_api_gateway" {
   source_arn    = "${aws_api_gateway_rest_api.user_api.execution_arn}/*/*"
 }
 
-output "api_url" {
-  value = "${aws_api_gateway_rest_api.user_api.execution_arn}/user"
+resource "aws_api_gateway_deployment" "user_api_deployment" {
+  depends_on = [
+    aws_api_gateway_integration.get_user_integration,
+    aws_api_gateway_integration.put_user_integration
+  ]
+  rest_api_id = aws_api_gateway_rest_api.user_api.id
+  stage_name  = "prod"
+}
+
+resource "aws_iam_role" "api_gateway_logs_role" {
+  name = "APIGatewayCloudWatchLogsRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "apigateway.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "api_gateway_logs_policy" {
+  name = "APIGatewayCloudWatchLogsPolicy"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
+          "logs:PutLogEvents",
+          "logs:GetLogEvents",
+          "logs:FilterLogEvents"
+        ],
+        Resource = "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_api_gateway_logs_policy" {
+  role       = aws_iam_role.api_gateway_logs_role.name
+  policy_arn = aws_iam_policy.api_gateway_logs_policy.arn
+}
+
+resource "aws_cloudwatch_log_group" "api_gateway_logs" {
+    name = "/aws/api_gateway/${aws_api_gateway_rest_api.user_api.name}"
+    retention_in_days = 7
+}
+
+resource "aws_api_gateway_stage" "prod" {
+    deployment_id = aws_api_gateway_deployment.user_api_deployment.id
+    rest_api_id = aws_api_gateway_rest_api.user_api.id
+    stage_name  = "prod"
+
+    access_log_settings {
+        destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
+        format          = jsonencode({
+            requestId   = "$context.requestId",
+            extendedRequestId = "$context.extendedRequestId",
+            httpMethod  = "$context.httpMethod",
+            resourcePath = "$context.resourcePath",
+            status      = "$context.status",
+            protocol    = "$context.protocol",
+            responseLength = "$context.responseLength"
+        })
+    }
 }
