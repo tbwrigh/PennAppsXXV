@@ -3,13 +3,14 @@
     display: flex;
     justify-content: center;
     padding: 20px;
+    overflow: hidden;
   }
   
   /* Common container for the header and tabs */
   .meeting-content {
-    width: 100%;
-    max-width: 800px; /* Set max width to match the tabs and header */
+    max-width: 100vw; /* Set max width to match the tabs and header */
     margin: 0 auto;
+    overflow: hidden;
   }
   
   /* Header section for meeting title, back button, and actions */
@@ -17,7 +18,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
   }
   
   .meeting-header h1 {

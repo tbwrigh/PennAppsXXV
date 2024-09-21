@@ -8,7 +8,7 @@ import './CreateMeeting.css';
 
 const CreateMeeting: React.FC = () => {
   const [form] = Form.useForm();
-  const history = useNavigate();
+  const navigate = useNavigate();
 
   const onFinish = (values: Dayjs | null) => {
     console.log('Success:', values);

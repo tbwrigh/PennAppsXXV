@@ -21,6 +21,7 @@
   display: flex;
   align-items: center; /* Vertically center the button text */
   height: 40px; /* Set a fixed height to ensure alignment */
+  margin-bottom: 8px;
 }
 
 /* Wrapper for the home content */
@@ -66,5 +67,10 @@
   align-items: center;
   justify-content: center;
   margin-left: auto;
+  color: #1890ff;
+}
+
+.new-meeting-text {
+  font-size: 16px;
   color: #1890ff;
 }

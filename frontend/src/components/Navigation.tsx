@@ -25,6 +25,10 @@ const Navigation: React.FC<WithAuthenticatorProps> = ({ signOut }) => {
       // Add navigation logic to go to settings
       navigate('/settings');
     }
+    else if (e.key === 'logout') {
+      console.log('Logged out');
+      if (signOut) signOut();
+    }
   };
 
   const userMenu = (
@@ -34,6 +38,9 @@ const Navigation: React.FC<WithAuthenticatorProps> = ({ signOut }) => {
       </Menu.Item>
       <Menu.Item key="settings" icon={<SettingOutlined />}>
         Settings
+      </Menu.Item>
+      <Menu.Item key="logout" icon={<UserOutlined />}>
+        Logout
       </Menu.Item>
     </Menu>
   );
@@ -54,13 +61,6 @@ const Navigation: React.FC<WithAuthenticatorProps> = ({ signOut }) => {
 
       </div>
       <div className="nav-user">
-        <Button
-          type="text"
-          className="logout-button"
-          onClick={handleLogout}
-        >
-          Logout
-        </Button>
       </div>
     </div>
   );
