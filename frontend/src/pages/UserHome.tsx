@@ -1,17 +1,24 @@
 import React from 'react';
 import { List, Card, Button } from 'antd';
 import { RightOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 
 import './UserHome.css';
 
 const meetings = [
-  { title: 'Team Sync' },
-  { title: 'Project Review' },
-  { title: 'Client Call' },
-  { title: 'Design Discussion' }
+  { title: 'Team Sync', id: "1" },
+  { title: 'Project Review', id: "2" },
+  { title: 'Client Call', id: "3" },
+  { title: 'Design Discussion', id: "4" }
 ];
 
 const Home: React.FC = () => {
+    const navigate = useNavigate();
+
+    const meetingClick = (id: string) => {
+        navigate("/meeting/" + id)
+    };
+
   return (
     <div className="user-home">
       <h1>Meetings</h1>
@@ -27,6 +34,7 @@ const Home: React.FC = () => {
                   type="text"
                   icon={<RightOutlined />}
                   className="arrow-button"
+                  onClick={() => {meetingClick(item.id)}}
                 />
               </div>
             </Card>

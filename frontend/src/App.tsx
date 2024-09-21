@@ -3,18 +3,20 @@ import Home from './pages/Home';
 import UserHome from './pages/UserHome';
 import Settings from './pages/Settings';
 import Navigation from './components/Navigation';
+import Meeting from './pages/Meeting';
 import './App.css';
 import { useState } from 'react';
 
 function App() {
-  const [loggedIn, setLoggedIn] = useState(false);  // Update with actual login state logic
+  const [loggedIn, setLoggedIn] = useState(true);  // Update with actual login state logic
 
   return (
     <Router>
       {loggedIn ? <Navigation /> : <></>}
       <Routes>
-      <Route path="/" element={loggedIn ? <UserHome /> : <Home />} />
-      <Route path="/settings" element={loggedIn ? <Settings /> : <Navigate to="/" />} />
+        <Route path="/" element={loggedIn ? <UserHome /> : <Home />} />
+        <Route path="/settings" element={loggedIn ? <Settings /> : <Navigate to="/" />} />
+        <Route path="/meeting/:id" element={loggedIn ? <Meeting /> : <Navigate to="/" />} />
       </Routes>
     </Router>
   );
