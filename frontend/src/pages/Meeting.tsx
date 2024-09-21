@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Tabs } from 'antd';
+import { Button, Tabs, Modal } from 'antd';
 import { ShareAltOutlined, EditOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import ShareForm from '../components/ShareForm'; // Import the ShareForm component
 import './Meeting.css';
 
 // Mock meeting data
@@ -18,6 +19,8 @@ const currentUser = 'user1';
 const Meeting: React.FC = () => {
   const { id } = useParams<{ id: string }>(); // Get the meeting ID from the route
   const [meeting, setMeeting] = useState<any | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false); // Modal visibility state
+  const [clearSelect, setClearSelect] = useState(false); // State to clear the Select component
   const navigate = useNavigate(); // Used for the back button
 
   useEffect(() => {
@@ -30,6 +33,25 @@ const Meeting: React.FC = () => {
     return <div>Meeting not found</div>;
   }
 
+  const showModal = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+    setClearSelect(true); // Trigger clearing the Select component
+  };
+
+  const handleShare = (selectedEmails: string[]) => {
+    console.log('Sharing with:', selectedEmails); // Log the selected emails
+    setIsModalVisible(false); // Close the modal
+    setClearSelect(true); // Clear the form (select component)
+  };
+
+  const resetClearSelect = () => {
+    setClearSelect(false); // Reset the clearSelect state after clearing
+  };
+
   return (
     <div className="meeting-page">
       <div className="meeting-content">
@@ -40,7 +62,7 @@ const Meeting: React.FC = () => {
           </Button>
           <h1>{meeting.title}</h1>
           <div className="meeting-actions">
-            <Button type="default" icon={<ShareAltOutlined />}>
+            <Button type="default" icon={<ShareAltOutlined />} onClick={showModal}>
               Share
             </Button>
             {meeting.owner === currentUser && (
@@ -66,6 +88,16 @@ const Meeting: React.FC = () => {
             <p>{meeting.notes}</p>
           </Tabs.TabPane>
         </Tabs>
+
+        {/* Modal for Share Form */}
+        <Modal
+          title="Share Meeting"
+          visible={isModalVisible}
+          footer={null}  // Remove default modal footer
+          onCancel={handleCancel}
+        >
+          <ShareForm clearSelect={clearSelect} resetClearSelect={resetClearSelect} onShare={handleShare} />
+          </Modal>
       </div>
     </div>
   );
