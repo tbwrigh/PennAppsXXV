@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Upload, Avatar, message } from 'antd';
 import { UploadOutlined, UserOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import './Settings.css';
 
 const Settings: React.FC = () => {
   const [form] = Form.useForm();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const handleAvatarChange = (info: any) => {
     if (info.file.status === 'done') {
@@ -22,6 +24,10 @@ const Settings: React.FC = () => {
     console.log(values);
   };
 
+  const handleCancel = () => {
+    navigate('/');
+  };
+
   return (
     <div className="settings-wrapper">
       <div className="settings-container">
@@ -33,7 +39,7 @@ const Settings: React.FC = () => {
           className="settings-form"
         >
           {/* Profile Picture Upload */}
-          <Form.Item label="Profile Picture" className="center-content">
+          <Form.Item className="center-content">
             <Avatar
               size={100}
               src={avatarUrl}
@@ -54,7 +60,7 @@ const Settings: React.FC = () => {
           <Form.Item
             label="Name"
             name="name"
-            rules={[{ required: true, message: 'Please input your name!' }]}
+            rules={[{ required: true, message: 'Please input your name' }]}
           >
             <Input placeholder="Enter your name" />
           </Form.Item>
@@ -64,8 +70,8 @@ const Settings: React.FC = () => {
             label="Email"
             name="email"
             rules={[
-              { required: true, message: 'Please input your email!' },
-              { type: 'email', message: 'Please enter a valid email!' }
+              { required: true, message: 'Please input your email' },
+              { type: 'email', message: 'Please enter a valid email' }
             ]}
           >
             <Input placeholder="Enter your email" />
@@ -75,17 +81,20 @@ const Settings: React.FC = () => {
           <Form.Item
             label="Password"
             name="password"
-            rules={[{ required: true, message: 'Please input your new password!' }]}
+            rules={[{ required: true, message: 'Please input your new password' }]}
           >
             <Input.Password placeholder="Enter new password" />
           </Form.Item>
 
-          {/* Submit Button */}
-          <Form.Item className="center-content">
-            <Button type="primary" htmlType="submit" className="save-button">
+          {/* Submit and Cancel Buttons */}
+          <div className="button-container">
+            <Button type="primary" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button type="primary" htmlType="submit">
               Save Changes
             </Button>
-          </Form.Item>
+            </div>
         </Form>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { List, Card, Button } from 'antd';
-import { PlusCircleOutlined, RightOutlined } from '@ant-design/icons';
+import { PlusCircleOutlined, PlusOutlined, RightOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
 import './UserHome.css';
@@ -26,9 +26,8 @@ const Home: React.FC = () => {
   return (
     <div className="user-home">
       <div className="meeting-header">
-        <h1>Meetings</h1>
-        <Button type="primary" className="new-meeting-button" icon={<PlusCircleOutlined />} onClick={newMeetingClick}></Button>
-        <span className="new-meeting-text">New Meeting</span>
+        <h1 style={{ marginLeft: '10vw' }}>Meetings</h1>
+        <Button type="primary" className="new-meeting-button" onClick={newMeetingClick} icon={<PlusOutlined />}>New Meeting</Button>
       </div>
       <List
         className="meeting-list"

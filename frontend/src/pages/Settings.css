@@ -14,14 +14,15 @@
     padding: 40px;
     background-color: #fff;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
+    border-radius: 0px;
   }
   
   /* Title Styling */
   .settings-container h1 {
     text-align: center;
     font-size: 28px;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
+    margin-top: -30px;
   }
   
   /* Center the form content */
@@ -31,14 +32,15 @@
     align-items: center;
     flex-direction: column;
   }
-  
+
   /* Avatar styling */
   .avatar {
-    margin-bottom: 10px;
+    margin-top: 10px;
   }
   
   /* Upload button for the profile picture */
   .upload-button {
+    margin-left: 50px;
     margin-top: 10px;
   }
   
@@ -46,10 +48,12 @@
   .ant-form-item {
     margin-bottom: 20px;
   }
-  
-  /* Make the save button full-width */
-  .save-button {
-    width: 100%;
+
+  .button-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px; /* Add some space between the buttons */
+    margin-top: 30px; /* Add some spacing above the container */
   }
   
   /* Adding some depth with a shadow */
