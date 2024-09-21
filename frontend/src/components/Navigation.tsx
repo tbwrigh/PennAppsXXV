@@ -4,11 +4,16 @@ import { SettingOutlined, CalendarOutlined, UserOutlined } from '@ant-design/ico
 import { useNavigate } from 'react-router-dom';
 import './Navigation.css';
 
-const Navigation: React.FC = () => {
+interface NavProps {
+  signOut: ()=>void;
+}
+
+const Navigation: React.FC<NavProps> = ({ signOut }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
     console.log('Logged out');
+    signOut();
   };
 
   const handleMenuClick = (e: any) => {

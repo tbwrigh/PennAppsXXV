@@ -12,6 +12,7 @@
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
     "@aws-amplify/auth": "^6.4.2",
+    "@aws-amplify/ui-react": "^6.5.0",
     "antd": "^5.20.6",
     "aws-amplify": "^6.6.2",
     "dayjs": "^1.11.13",

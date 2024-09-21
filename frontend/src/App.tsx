@@ -9,20 +9,29 @@ import CreateMeeting from './pages/CreateMeeting';
 import './App.css';
 import { useState } from 'react';
 
-function App() {
-  const [loggedIn] = useState(false);  // Update with actual login state logic
+import { Authenticator } from '@aws-amplify/ui-react';
+import { Amplify } from 'aws-amplify';
+import outputs from '../amplify_outputs.json';
+import '@aws-amplify/ui-react/styles.css';
 
+Amplify.configure(outputs);
+
+function App() {
   return (
-    <Router>
-      {loggedIn ? <Navigation /> : <></>}
-      <Routes>
-        <Route path="/" element={loggedIn ? <UserHome /> : <Home />} />
-        <Route path="/signup" element={!loggedIn ? <SignUpForm /> : <UserHome />} />
-        <Route path="/settings" element={loggedIn ? <Settings /> : <Navigate to="/" />} />
-        <Route path="/meeting/:id" element={loggedIn ? <Meeting /> : <Navigate to="/" />} />
-        <Route path="/create" element={<CreateMeeting />} />
-      </Routes>
-    </Router>
+    <Authenticator>
+      {({ signOut, user }) => (
+        <Router>
+          <Navigation signOut={signOut} />
+          <Routes>
+            <Route path="/" element={<UserHome />} />
+            <Route path="/signup" element={<SignUpForm />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/meeting/:id" element={<Meeting />} />
+            <Route path="/create" element={<CreateMeeting />} />
+          </Routes>
+        </Router>
+      )}
+    </Authenticator>
   );
 }
 
