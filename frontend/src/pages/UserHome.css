@@ -1,0 +1,51 @@
+.user-home {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  
+  .user-home h1 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  
+  /* Make sure the list is centered */
+  .meeting-list {
+    width: 100%;
+    max-width: 600px;
+  }
+  
+  /* Center the list items */
+  .list-item {
+    display: flex;
+    justify-content: center;
+  }
+  
+  /* Set the card to take full width within its container */
+  .meeting-card {
+    width: 100%;
+  }
+  
+  /* Content inside the card */
+  .card-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .meeting-title {
+    font-size: 18px;
+    font-weight: 500;
+    text-align: left;
+  }
+  
+  .arrow-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    color: #1890ff;
+  }
+  

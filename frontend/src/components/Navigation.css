@@ -1,0 +1,28 @@
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #001529;
+    color: white;
+  }
+  
+  .nav-logo h2 {
+    color: white;
+    margin: 0;
+  }
+  
+  .nav-user {
+    display: flex;
+    align-items: center;
+  }
+  
+  .user-avatar {
+    margin-right: 10px;
+    cursor: pointer;
+  }
+  
+  .logout-button {
+    color: white;
+  }
+  

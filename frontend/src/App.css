@@ -1,0 +1,43 @@
+/* Reset some basic styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  html, body, #root {
+    height: 100%;
+    font-family: 'Arial', sans-serif;
+  }
+  
+  /* General layout for your app */
+  .app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #f0f2f5;
+  }
+  
+  /* Navigation specific */
+  .nav-container {
+    background-color: #001529;
+    padding: 10px 20px;
+  }
+  
+  /* Default Ant Design overrides */
+  .ant-btn {
+    font-family: inherit; /* Ensure button fonts match the rest of the app */
+  }
+  
+  .ant-dropdown-menu-item {
+    font-size: 16px;
+  }
+  
+  /* Responsive styling */
+  @media (max-width: 768px) {
+    .nav-container {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+  
