@@ -1,10 +1,14 @@
 .availability-form {
     display: flex;
-    overflow-x: auto; /* Allow horizontal scrolling */
+    justify-content: center;
+    align-items: center;
   }
   
   .availability-grid {
     display: flex;
+    align-items: center;
+    gap: 0px;
+    padding-right: 2rem;
   }
   
   .availability-column {
@@ -27,7 +31,7 @@
   }
   
   .hour-tick {
-    height: 20px;
+    height: 30px;
     border-top: 1px solid #eee;
     position: relative;
   }
@@ -39,6 +43,21 @@
     bottom: 0;
     left: 0;
     right: 0;
+  }
+
+  /* Time column */
+  .time-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding-right: 10px; 
+    margin-top: 20px;
+  }
+
+  .time-slot {
+    height: 30px; /* Match the height of the hour-tick */
+    display: flex;
+    align-items: center; 
   }
   
   .availability-menu {

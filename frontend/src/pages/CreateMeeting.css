@@ -31,7 +31,8 @@ html, body {
     padding: 2rem;
     font-size: 40px;
     border-radius: 0px;
-    width: 100%;
+    width: 50vw;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
 }
 
 .ant-card-head-title{
@@ -62,7 +63,6 @@ html, body {
   
   .next-button {
     border: none;
-    background-color: purple;
     color: white;
     padding: 1px 32px;
     text-align: center;

@@ -88,11 +88,11 @@ const Settings: React.FC = () => {
 
           {/* Submit and Cancel Buttons */}
           <div className="button-container">
-            <Button type="primary" onClick={handleCancel}>
-              Cancel
-            </Button>
             <Button type="primary" htmlType="submit">
-              Save Changes
+              Save
+            </Button>
+            <Button type="default" onClick={handleCancel}>
+              Cancel
             </Button>
             </div>
         </Form>

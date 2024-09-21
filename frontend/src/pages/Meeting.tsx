@@ -118,7 +118,7 @@ const Meeting: React.FC = () => {
 
         {/* Modal for availability form */}
         <Modal
-          title="Change Availability"
+          title={<div className="header-text">Change Availability</div>}
           visible={isAvailabilityModalVisible}
           footer={null} // No footer needed for this modal
           onCancel={handleAvailabilityModalClose}

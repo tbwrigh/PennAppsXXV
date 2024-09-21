@@ -62,7 +62,8 @@ const CreateMeeting: React.FC = () => {
                 </div>
             </Form.Item>
             <Form.Item>
-              <Button type="primary" htmlType="submit" className="next-button" icon={<ArrowRightOutlined />}>
+              <Button type="primary" htmlType="submit" className="next-button">
+                Create
               </Button>
             </Form.Item>
           </Form>

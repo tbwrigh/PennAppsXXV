@@ -28,6 +28,12 @@ const AvailabilityForm: React.FC = () => {
   const [timeRange, setTimeRange] = useState<[Dayjs | null, Dayjs | null]>([null, null]);
   const [unsavedAvailability, setUnsavedAvailability] = useState<Availability[]>([]); // For tracking unsaved changes
 
+  const formatHour = (hour: number) => {
+    const period = hour < 12 ? 'AM' : 'PM';
+    const formattedHour = hour % 12 === 0 ? 12 : hour % 12;
+    return `${formattedHour}:00 ${period}`;
+  };
+
   // Handler for selecting a day column
   const handleDayClick = (day: string) => {
     setSelectedDay(day);
@@ -76,6 +82,14 @@ const AvailabilityForm: React.FC = () => {
   return (
     <div className="availability-form">
       <div className="availability-grid">
+        <div className="time-column">
+        {hours.map((hour) => (
+            <div className="time-slot" key={hour}>
+              {formatHour(hour)}
+            </div>
+          ))}
+        </div>
+
         {days.map((day) => (
           <div
             className={`availability-column ${selectedDay && selectedDay !== day.day ? 'hidden' : ''}`} // Hide non-selected days
