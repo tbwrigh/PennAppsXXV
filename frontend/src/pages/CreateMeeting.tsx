@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 import './CreateMeeting.css';
 
 const CreateMeeting: React.FC = () => {
-  const [form] = Form.useForm();
   const navigate = useNavigate();
 
   const onFinish = (values: Dayjs | null) => {

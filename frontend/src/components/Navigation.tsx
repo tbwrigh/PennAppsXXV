@@ -1,5 +1,5 @@
 import React from 'react';
-import { Avatar, Button, Dropdown, Menu } from 'antd';
+import { Avatar, Dropdown, Menu } from 'antd';
 import { SettingOutlined, CalendarOutlined, UserOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import './Navigation.css';
@@ -10,11 +10,6 @@ import { WithAuthenticatorProps } from '@aws-amplify/ui-react'
 
 const Navigation: React.FC<WithAuthenticatorProps> = ({ signOut }) => {
   const navigate = useNavigate();
-
-  const handleLogout = () => {
-    console.log('Logged out');
-    if (signOut) signOut();
-  };
 
   const handleMenuClick = (e: any) => {
     if (e.key === 'meetings') {
