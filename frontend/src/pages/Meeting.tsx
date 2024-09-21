@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Tabs, Modal } from 'antd';
-import { ShareAltOutlined, EditOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { ShareAltOutlined, EditOutlined, ArrowLeftOutlined, CalendarOutlined } from '@ant-design/icons';
 import ShareForm from '../components/ShareForm'; // Import the ShareForm component
+import AvailabilityForm from '../components/AvailabilityForm';
 import './Meeting.css';
 
 // Mock meeting data
@@ -21,6 +22,7 @@ const Meeting: React.FC = () => {
   const [meeting, setMeeting] = useState<any | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false); // Modal visibility state
   const [clearSelect, setClearSelect] = useState(false); // State to clear the Select component
+  const [isAvailabilityModalVisible, setAvailabilityModalVisible] = useState(false);
   const navigate = useNavigate(); // Used for the back button
 
   useEffect(() => {
@@ -52,6 +54,16 @@ const Meeting: React.FC = () => {
     setClearSelect(false); // Reset the clearSelect state after clearing
   };
 
+  // Handler for showing the availability modal
+  const showAvailabilityModal = () => {
+    setAvailabilityModalVisible(true);
+  };
+
+  // Handler for closing the availability modal
+  const handleAvailabilityModalClose = () => {
+    setAvailabilityModalVisible(false);
+  };
+
   return (
     <div className="meeting-page">
       <div className="meeting-content">
@@ -76,7 +88,12 @@ const Meeting: React.FC = () => {
         {/* Tabs for Time, Location, Cost, Notes */}
         <Tabs defaultActiveKey="1" className="meeting-tabs">
           <Tabs.TabPane tab="Time" key="1">
-            <p>{meeting.time}</p>
+            <div className='timeTabHeader'>
+              <h3>Best Times</h3>
+              <Button type='dashed' icon={<CalendarOutlined />} onClick={showAvailabilityModal}>
+                Change Availability
+              </Button>
+            </div>
           </Tabs.TabPane>
           <Tabs.TabPane tab="Location" key="2">
             <p>{meeting.location}</p>
@@ -98,6 +115,17 @@ const Meeting: React.FC = () => {
         >
           <ShareForm clearSelect={clearSelect} resetClearSelect={resetClearSelect} onShare={handleShare} />
           </Modal>
+
+        {/* Modal for availability form */}
+        <Modal
+          title="Change Availability"
+          visible={isAvailabilityModalVisible}
+          footer={null} // No footer needed for this modal
+          onCancel={handleAvailabilityModalClose}
+          width={800} // Set the modal width to accommodate the grid
+        >
+          <AvailabilityForm />
+        </Modal>
       </div>
     </div>
   );

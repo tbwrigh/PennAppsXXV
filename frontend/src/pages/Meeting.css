@@ -52,3 +52,20 @@
     font-size: 16px;
   }
   
+
+  .timeTabHeader {
+    display: flex;               /* Set the container to flexbox */
+    justify-content: space-between; /* Space between the heading and the button */
+    align-items: center;          /* Vertically center the button and heading */
+    width: 100%;                  /* Ensure the container takes full width */
+    margin-bottom: 16px;          /* Add some spacing below, if needed */
+  }
+  
+  .timeTabHeader h3 {
+    margin: 0;                    /* Remove default margin from the heading */
+  }
+  
+  .timeTabHeader button {
+    margin-left: auto;            /* Ensure the button stays on the right */
+  }
+  
