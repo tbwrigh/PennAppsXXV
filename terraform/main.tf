@@ -33,9 +33,9 @@ resource "aws_dynamodb_table" "user_table" {
   }
 
   global_secondary_index {
-    name               = "EmailIndex"
-    hash_key           = "email"
-    projection_type    = "ALL"
+    name            = "EmailIndex"
+    hash_key        = "email"
+    projection_type = "ALL"
   }
 
   tags = {
@@ -47,15 +47,15 @@ resource "aws_dynamodb_table" "user_table" {
 resource "aws_iam_role" "lambda_execution_role" {
   name = "pennapps_lambda_execution_role"
   assume_role_policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
+    "Version" : "2012-10-17",
+    "Statement" : [
       {
-        "Action": "sts:AssumeRole",
-        "Principal": {
-          "Service": "lambda.amazonaws.com"
+        "Action" : "sts:AssumeRole",
+        "Principal" : {
+          "Service" : "lambda.amazonaws.com"
         },
-        "Effect": "Allow",
-        "Sid": ""
+        "Effect" : "Allow",
+        "Sid" : ""
       }
     ]
   })
@@ -65,17 +65,17 @@ resource "aws_iam_role" "lambda_execution_role" {
 resource "aws_iam_policy" "lambda_dynamodb_s3_policy" {
   name = "lambda_dynamodb_s3_policy"
   policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
+    "Version" : "2012-10-17",
+    "Statement" : [
       {
-        "Effect": "Allow",
-        "Action": [
+        "Effect" : "Allow",
+        "Action" : [
           "dynamodb:GetItem",
           "dynamodb:PutItem",
           "s3:GetObject",
           "s3:PutObject"
         ],
-        "Resource": [
+        "Resource" : [
           aws_dynamodb_table.user_table.arn,
           aws_s3_bucket.user_profile_bucket.arn
         ]
@@ -87,16 +87,16 @@ resource "aws_iam_policy" "lambda_dynamodb_s3_policy" {
 resource "aws_iam_policy" "lambda_logging_policy" {
   name = "lambda_logging_policy"
   policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
+    "Version" : "2012-10-17",
+    "Statement" : [
       {
-        "Effect": "Allow",
-        "Action": [
+        "Effect" : "Allow",
+        "Action" : [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ],
-        "Resource": "arn:aws:logs:*:*:*"
+        "Resource" : "arn:aws:logs:*:*:*"
       }
     ]
   })
@@ -137,9 +137,9 @@ resource "aws_lambda_function" "user_profile_lambda" {
   timeout       = 15
   memory_size   = 128
 
-  filename      = data.archive_file.lambda_zip.output_path
+  filename = data.archive_file.lambda_zip.output_path
 
-  layers        = [aws_lambda_layer_version.pyjwt_layer.arn]
+  layers = [aws_lambda_layer_version.pyjwt_layer.arn]
 
   environment {
     variables = {
@@ -150,7 +150,7 @@ resource "aws_lambda_function" "user_profile_lambda" {
 
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
   name              = "/aws/lambda/${aws_lambda_function.user_profile_lambda.function_name}"
-  retention_in_days = 7  # Optional: Set how long you want the logs to be retained
+  retention_in_days = 7 # Optional: Set how long you want the logs to be retained
 }
 
 # API Gateway for Lambda
@@ -170,9 +170,9 @@ resource "aws_api_gateway_resource" "user" {
 resource "aws_api_gateway_authorizer" "cognito_authorizer" {
   name            = "CognitoAuthorizer"
   rest_api_id     = aws_api_gateway_rest_api.user_api.id
-  type            = "COGNITO_USER_POOLS"  # Specify the correct authorizer type
+  type            = "COGNITO_USER_POOLS" # Specify the correct authorizer type
   identity_source = "method.request.header.Authorization"
-  provider_arns   = [data.aws_cognito_user_pool.amplify_user_pool.arn]  # Reference to the Cognito User Pool
+  provider_arns   = [data.aws_cognito_user_pool.amplify_user_pool.arn] # Reference to the Cognito User Pool
 }
 
 # Single GET method on /user
@@ -180,11 +180,11 @@ resource "aws_api_gateway_method" "get_user" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
   resource_id   = aws_api_gateway_resource.user.id
   http_method   = "GET"
-  authorization = "NONE"  # No authorization for public GET
+  authorization = "NONE" # No authorization for public GET
 
   # Allow an optional 'public' query parameter
   request_parameters = {
-    "method.request.querystring.public": false
+    "method.request.querystring.public" : false
   }
 }
 
@@ -193,7 +193,7 @@ resource "aws_api_gateway_method" "put_user" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
   resource_id   = aws_api_gateway_resource.user.id
   http_method   = "PUT"
-  authorization = "COGNITO_USER_POOLS"   # Require Cognito User Pool authorization
+  authorization = "COGNITO_USER_POOLS" # Require Cognito User Pool authorization
   authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
 }
 
@@ -281,25 +281,25 @@ resource "aws_iam_role_policy_attachment" "attach_api_gateway_logs_policy" {
 }
 
 resource "aws_cloudwatch_log_group" "api_gateway_logs" {
-    name = "/aws/api_gateway/${aws_api_gateway_rest_api.user_api.name}"
-    retention_in_days = 7
+  name              = "/aws/api_gateway/${aws_api_gateway_rest_api.user_api.name}"
+  retention_in_days = 7
 }
 
 resource "aws_api_gateway_stage" "prod" {
-    deployment_id = aws_api_gateway_deployment.user_api_deployment.id
-    rest_api_id = aws_api_gateway_rest_api.user_api.id
-    stage_name  = "prod"
+  deployment_id = aws_api_gateway_deployment.user_api_deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  stage_name    = "prod"
 
-    access_log_settings {
-        destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
-        format          = jsonencode({
-            requestId   = "$context.requestId",
-            extendedRequestId = "$context.extendedRequestId",
-            httpMethod  = "$context.httpMethod",
-            resourcePath = "$context.resourcePath",
-            status      = "$context.status",
-            protocol    = "$context.protocol",
-            responseLength = "$context.responseLength"
-        })
-    }
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
+    format = jsonencode({
+      requestId         = "$context.requestId",
+      extendedRequestId = "$context.extendedRequestId",
+      httpMethod        = "$context.httpMethod",
+      resourcePath      = "$context.resourcePath",
+      status            = "$context.status",
+      protocol          = "$context.protocol",
+      responseLength    = "$context.responseLength"
+    })
+  }
 }
