@@ -1,0 +1,10 @@
+.signup-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f0f2f5;
+    position: relative;
+    overflow: hidden;
+}

@@ -1,8 +1,29 @@
 .home {
     height: 100vh;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: space-between;
     align-items: center;
     background-color: #f0f2f5;
+    position: relative;
+    overflow: hidden;
   }
   
+  .heading-container {
+    margin-top: 5vh;
+  }
+
+  .subheading-container {
+    position: absolute;
+    left: 40vh;
+    top: 50vh;
+  }
+
+  .login-container {
+    height: 40vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20vh;
+    width: 100%;
+  }

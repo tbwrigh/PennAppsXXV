@@ -19,15 +19,15 @@ const LoginForm: React.FC = () => {
         onFinishFailed={onFinishFailed}
       >
         <Form.Item
-          name="username"
-          rules={[{ required: true, message: 'Please input your username!' }]}
+          name="email"
+          rules={[{ required: true, message: 'Please input your email' }]}
         >
-          <Input prefix={<UserOutlined />} placeholder="Username" />
+          <Input prefix={<UserOutlined />} placeholder="Email" />
         </Form.Item>
 
         <Form.Item
           name="password"
-          rules={[{ required: true, message: 'Please input your password!' }]}
+          rules={[{ required: true, message: 'Please input your password' }]}
         >
           <Input.Password prefix={<LockOutlined />} placeholder="Password" />
         </Form.Item>
@@ -36,6 +36,7 @@ const LoginForm: React.FC = () => {
           <Button type="primary" htmlType="submit" block>
             Log in
           </Button>
+          <a href="/signup">Or sign up</a>
         </Form.Item>
       </Form>
     </Card>
