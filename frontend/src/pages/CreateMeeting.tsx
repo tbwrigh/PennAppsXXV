@@ -1,13 +1,18 @@
 import React from 'react';
 import { Button, Form, Input, Card, TimePicker, DatePicker } from 'antd';
 import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
-import { CalendarOutlined, EditOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, CalendarOutlined, EditOutlined } from '@ant-design/icons';
 import { Dayjs } from 'dayjs';
+import { useNavigate } from 'react-router-dom';
 import './CreateMeeting.css';
 
 const CreateMeeting: React.FC = () => {
+  const [form] = Form.useForm();
+  const history = useNavigate();
+
   const onFinish = (values: Dayjs | null) => {
     console.log('Success:', values);
+    navigate('/meeting/1');
   };
 
   const onFinishFailed = (errorInfo: ValidateErrorEntity<Dayjs | null>) => {
@@ -31,6 +36,7 @@ const CreateMeeting: React.FC = () => {
             <Form.Item
               name="meeting_title"
               rules={[{ required: true, message: 'Please input the meeting title' }]}
+              className="form-item"
             >
               <Input prefix={<CalendarOutlined />} placeholder="Meeting Title" />  
             </Form.Item>
@@ -41,24 +47,23 @@ const CreateMeeting: React.FC = () => {
               <Input prefix={<EditOutlined />} placeholder="Meeting Description" />
             </Form.Item>
             <Form.Item
-              name="time"
-              rules={[{ required: true, message: 'Please select the time' }]}
-            >
-                <div className="time-picker">
-                <TimePicker.RangePicker format="h:mm a" className="time-picker" />
-                </div>
-            </Form.Item>
-            <Form.Item
               name="date"
-              rules={[{ required: true, message: 'Please select at least one date' }]}
+            //   rules={[{ required: true, message: 'Please select at least one date' }]}
             >
                 <div className="date-picker">
                 <DatePicker multiple onChange={onchange} maxTagCount="responsive" format="MM/DD/YYYY" getPopupContainer={(trigger: HTMLElement) => trigger.parentElement || document.body} />
                 </div>
             </Form.Item>
+            <Form.Item
+              name="time"
+            //   rules={[{ required: true, message: 'Please select the time' }]}
+            >
+                <div className="time-picker">
+                <TimePicker.RangePicker format="h:mm a" className="time-picker" />
+                </div>
+            </Form.Item>
             <Form.Item>
-              <Button type="primary" htmlType="submit">
-                Next
+              <Button type="primary" htmlType="submit" className="next-button" icon={<ArrowRightOutlined />}>
               </Button>
             </Form.Item>
           </Form>
