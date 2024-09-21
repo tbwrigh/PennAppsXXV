@@ -1,0 +1,54 @@
+/* Page container */
+.meeting-page {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  /* Common container for the header and tabs */
+  .meeting-content {
+    width: 100%;
+    max-width: 800px; /* Set max width to match the tabs and header */
+    margin: 0 auto;
+  }
+  
+  /* Header section for meeting title, back button, and actions */
+  .meeting-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .meeting-header h1 {
+    margin: 0;
+    font-size: 28px;
+    flex-grow: 1; /* Allow the title to grow and push actions to the right */
+    text-align: center;
+  }
+  
+  /* Back button styling */
+  .back-button {
+    margin-right: 15px;
+    color: #1890ff;
+  }
+  
+  /* Button actions for share and edit */
+  .meeting-actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .edit-button {
+    margin-left: 10px;
+  }
+  
+  /* Styling for the Ant Design Tabs */
+  .ant-tabs-top {
+    margin-top: 20px;
+  }
+  
+  .ant-tabs-tab {
+    font-size: 16px;
+  }
+  
