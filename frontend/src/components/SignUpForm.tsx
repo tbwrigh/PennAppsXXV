@@ -53,7 +53,9 @@ const SignUpForm: React.FC = () => {
           <Button type="primary" htmlType="submit" block>
             Sign Up
           </Button>
-          <a href="/" className="login-button">Or log in</a>
+          <div className="login-text">
+            Already have an account? <a href="/" className="login-link">Log In</a>
+          </div>
         </Form.Item>
       </Form>
     </Card>

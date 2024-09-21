@@ -21,7 +21,8 @@ const CreateMeeting: React.FC = () => {
   return (
     <div className="wrapper">
       <div className="item">
-        <Card title="Create Meeting" style={{ width: 400, height: 400 }}>
+        <Card title="Create Meeting" className="card">
+        <div className="form-elements">
           <Form
             name="create_meeting"
             onFinish={onFinish}
@@ -39,12 +40,18 @@ const CreateMeeting: React.FC = () => {
             >
               <Input prefix={<EditOutlined />} placeholder="Meeting Description" />
             </Form.Item>
-            <Form.Item>
+            <Form.Item
+              name="time"
+              rules={[{ required: true, message: 'Please select the time' }]}
+            >
                 <div className="time-picker">
                 <TimePicker.RangePicker format="h:mm a" className="time-picker" />
                 </div>
             </Form.Item>
-            <Form.Item>
+            <Form.Item
+              name="date"
+              rules={[{ required: true, message: 'Please select at least one date' }]}
+            >
                 <div className="date-picker">
                 <DatePicker multiple onChange={onchange} maxTagCount="responsive" format="MM/DD/YYYY" getPopupContainer={(trigger: HTMLElement) => trigger.parentElement || document.body} />
                 </div>
@@ -55,6 +62,7 @@ const CreateMeeting: React.FC = () => {
               </Button>
             </Form.Item>
           </Form>
+          </div>
         </Card>
       </div>
     </div>
