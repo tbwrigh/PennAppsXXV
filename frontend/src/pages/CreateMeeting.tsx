@@ -1,18 +1,20 @@
 import React from 'react';
 import { Button, Form, Input, Card, TimePicker, DatePicker } from 'antd';
+import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
 import { CalendarOutlined, EditOutlined } from '@ant-design/icons';
+import { Dayjs } from 'dayjs';
 import './CreateMeeting.css';
 
 const CreateMeeting: React.FC = () => {
-  const onFinish = (values: any) => {
+  const onFinish = (values: Dayjs | null) => {
     console.log('Success:', values);
   };
 
-  const onFinishFailed = (errorInfo: any) => {
+  const onFinishFailed = (errorInfo: ValidateErrorEntity<Dayjs | null>) => {
     console.log('Failed:', errorInfo);
   };
 
-  const onchange = (date, dateString) => {
+  const onchange = (date: Dayjs | null, dateString: string | string[]) => {
     console.log(date, dateString);
   };
 
@@ -44,7 +46,7 @@ const CreateMeeting: React.FC = () => {
             </Form.Item>
             <Form.Item>
                 <div className="date-picker">
-                <DatePicker multiple onChange={onchange} maxTagCount="responsive" format="MM/DD/YYYY" getPopupContainer={trigger => trigger.parentElement} />
+                <DatePicker multiple onChange={onchange} maxTagCount="responsive" format="MM/DD/YYYY" getPopupContainer={(trigger: HTMLElement) => trigger.parentElement || document.body} />
                 </div>
             </Form.Item>
             <Form.Item>

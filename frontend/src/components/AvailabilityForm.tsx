@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, TimePicker } from 'antd';
-import moment from 'moment';
+import { Dayjs } from 'dayjs'; 
 import { CloseOutlined } from '@ant-design/icons';
 import './AvailabilityForm.css';
 
@@ -25,7 +25,7 @@ const hours = Array.from({ length: 24 }, (_, i) => i); // Generate hours from 0 
 const AvailabilityForm: React.FC = () => {
   const [availability, setAvailability] = useState<Availability[]>([]); // Stores availability per day
   const [selectedDay, setSelectedDay] = useState<string | null>(null); // For tracking selected day
-  const [timeRange, setTimeRange] = useState<[moment.Moment | null, moment.Moment | null]>([null, null]);
+  const [timeRange, setTimeRange] = useState<[Dayjs | null, Dayjs | null]>([null, null]);
   const [unsavedAvailability, setUnsavedAvailability] = useState<Availability[]>([]); // For tracking unsaved changes
 
   // Handler for selecting a day column
@@ -36,8 +36,12 @@ const AvailabilityForm: React.FC = () => {
   };
 
   // Handle time range change
-  const handleTimeRangeChange = (times: [moment.Moment | null, moment.Moment | null]) => {
-    setTimeRange(times);
+//   const handleTimeRangeChange = (times: [Dayjs | null, Dayjs | null]) => {
+//     setTimeRange(times); // Use Dayjs for timeRange
+//   };
+
+  const handleTimeRangeChange = (dates: [Dayjs | null, Dayjs | null] | null) => {
+    setTimeRange(dates ?? [null, null]); // If dates are null, set to [null, null]
   };
 
   // Add availability for the selected time range

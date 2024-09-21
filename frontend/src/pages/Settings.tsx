@@ -19,6 +19,7 @@ const Settings: React.FC = () => {
   const handleFinish = (values: any) => {
     message.success('Profile updated successfully!');
     // Add your update logic here
+    console.log(values);
   };
 
   return (

@@ -10,7 +10,7 @@ import './App.css';
 import { useState } from 'react';
 
 function App() {
-  const [loggedIn, setLoggedIn] = useState(true);  // Update with actual login state logic
+  const [loggedIn] = useState(false);  // Update with actual login state logic
 
   return (
     <Router>
