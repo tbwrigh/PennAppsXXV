@@ -2,7 +2,6 @@ import React from 'react';
 import { List, Card, Button } from 'antd';
 import { RightOutlined } from '@ant-design/icons';
 
-import Navigation from '../components/Navigation';
 import './UserHome.css';
 
 const meetings = [
@@ -14,8 +13,6 @@ const meetings = [
 
 const Home: React.FC = () => {
   return (
-    <div>
-        <Navigation></Navigation>
     <div className="user-home">
       <h1>Meetings</h1>
       <List
@@ -36,8 +33,6 @@ const Home: React.FC = () => {
           </List.Item>
         )}
       />
-    </div>
-
     </div>
   );
 };
