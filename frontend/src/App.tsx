@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Home from './pages/Home';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+// import Home from './pages/Home';
 import UserHome from './pages/UserHome';
 import Settings from './pages/Settings';
 import Navigation from './components/Navigation';
@@ -7,7 +7,7 @@ import Meeting from './pages/Meeting';
 import SignUpForm from './components/SignUpForm';
 import CreateMeeting from './pages/CreateMeeting';
 import './App.css';
-import { useState } from 'react';
+// import { useState } from 'react';
 
 import { Authenticator } from '@aws-amplify/ui-react';
 import { Amplify } from 'aws-amplify';
@@ -19,7 +19,7 @@ Amplify.configure(outputs);
 function App() {
   return (
     <Authenticator>
-      {({ signOut, user }) => (
+      {({ signOut }) => ( // signOut, user
         <Router>
           <Navigation signOut={signOut} />
           <Routes>
