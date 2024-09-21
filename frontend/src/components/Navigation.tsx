@@ -1,6 +1,6 @@
 import React from 'react';
 import { Avatar, Dropdown, Menu } from 'antd';
-import { SettingOutlined, CalendarOutlined, UserOutlined } from '@ant-design/icons';
+import { SettingOutlined, CalendarOutlined, UserOutlined, PlusOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import './Navigation.css';
 
@@ -12,7 +12,10 @@ const Navigation: React.FC<WithAuthenticatorProps> = ({ signOut }) => {
   const navigate = useNavigate();
 
   const handleMenuClick = (e: any) => {
-    if (e.key === 'meetings') {
+    if (e.key === 'create') {
+      console.log('Navigate to Create Meeting');
+      navigate('/create');
+    } else if (e.key === 'meetings') {
       console.log('Navigate to My Meetings');
       navigate('/');
     } else if (e.key === 'settings') {
@@ -28,6 +31,9 @@ const Navigation: React.FC<WithAuthenticatorProps> = ({ signOut }) => {
 
   const userMenu = (
     <Menu onClick={handleMenuClick}>
+      <Menu.Item key="create" icon={<PlusOutlined />}>
+        Create Meeting
+      </Menu.Item>
       <Menu.Item key="meetings" icon={<CalendarOutlined />}>
         My Meetings
       </Menu.Item>

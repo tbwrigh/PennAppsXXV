@@ -2,6 +2,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow-x: scroll;
   }
   
   .availability-grid {
@@ -61,12 +62,17 @@
   }
   
   .availability-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
     margin-left: 20px;
     padding: 20px;
     background-color: #f9f9f9;
     border: 1px solid #ddd;
     border-radius: 4px;
     width: 300px;
+    height: auto;
   }
   
   .availability-list {
@@ -79,6 +85,7 @@
     background-color: #d3f9d8;
     padding: 10px;
     border-radius: 4px;
+    margin-top: 10px;
     margin-bottom: 5px;
   }
   

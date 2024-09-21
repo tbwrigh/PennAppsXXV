@@ -120,7 +120,7 @@ const AvailabilityForm: React.FC = () => {
           <div className="availability-list">
             {unsavedAvailability.map((slot, index) => (
               <div key={index} className="availability-block">
-                {slot.startHour}:00 - {slot.endHour}:00
+                {formatHour(slot.startHour)} - {formatHour(slot.endHour)}
                 <Button
                   type="text"
                   icon={<CloseOutlined />}
@@ -133,7 +133,7 @@ const AvailabilityForm: React.FC = () => {
 
           {/* Time Range Input */}
           <TimePicker.RangePicker
-            format="HH:mm"
+            format="h:mm a"
             value={timeRange}
             onChange={handleTimeRangeChange}
           />
