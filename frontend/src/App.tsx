@@ -5,6 +5,7 @@ import Settings from './pages/Settings';
 import Navigation from './components/Navigation';
 import Meeting from './pages/Meeting';
 import SignUpForm from './components/SignUpForm';
+import CreateMeeting from './pages/CreateMeeting';
 import './App.css';
 import { useState } from 'react';
 
@@ -19,6 +20,7 @@ function App() {
         <Route path="/signup" element={!loggedIn ? <SignUpForm /> : <UserHome />} />
         <Route path="/settings" element={loggedIn ? <Settings /> : <Navigate to="/" />} />
         <Route path="/meeting/:id" element={loggedIn ? <Meeting /> : <Navigate to="/" />} />
+        <Route path="/create" element={<CreateMeeting />} />
       </Routes>
     </Router>
   );

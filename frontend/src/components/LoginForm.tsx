@@ -36,7 +36,7 @@ const LoginForm: React.FC = () => {
           <Button type="primary" htmlType="submit" block>
             Log in
           </Button>
-          <a href="/signup">Or sign up</a>
+          <a href="/create">Or sign up</a>
         </Form.Item>
       </Form>
     </Card>
