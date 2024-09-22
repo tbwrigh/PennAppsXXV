@@ -1,21 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button, Form, Input, Card, TimePicker, DatePicker } from 'antd';
 import { CalendarOutlined, EditOutlined } from '@ant-design/icons';
 import { Dayjs } from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import './CreateMeeting.css';
 import { MeetingClient } from '../controllers/MeetingClient';
+import { Moment } from 'moment';
 
 interface CreateMeetingFormEntries {
   meeting_title: string,
   meeting_description: string,
-  date: Dayjs[]|Dayjs,
-  time: Dayjs[],
 }
 
 const CreateMeeting: React.FC = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
+  const [times, setTimes] = useState<string[]>([]);
+  const [dates, setDates] = useState<string[]>([]);
   const meetingClient = new MeetingClient();
 
   const onFinish = (values: CreateMeetingFormEntries) => {
@@ -24,21 +25,11 @@ const CreateMeeting: React.FC = () => {
     const name = values.meeting_title;
     const desc = values.meeting_description;
   
-    // Extract days as an array of strings
-    let days: string[] = [];
-    if (Array.isArray(values.date)) {
-      days = values.date.map((date: Dayjs) => date.format('YYYY-MM-DD'));
-    } else if (values.date) {
-      days = [values.date.format('YYYY-MM-DD')];
-    }
-  
     // Extract start and end times
-    const [startTime, endTime] = values.time;
-    const start = startTime.format('HH:mm');
-    const end = endTime.format('HH:mm');
+    const [start, end] = times;
   
     try {
-      meetingClient.postMeeting(name, desc, days, start, end).then(
+      meetingClient.postMeeting(name, desc, dates, start, end).then(
         (response) => {
           navigate(`/meeting/${response.meeting_id}`);
         }
@@ -47,6 +38,25 @@ const CreateMeeting: React.FC = () => {
       console.log("something, went wrong")
     }
   };
+
+  const onChangeTime = (
+    times: any, 
+    timeStrings: [string, string]
+  ) => {
+    if (times && times[0] && times[1]) {
+      setTimes(timeStrings);
+    }
+  };
+
+  const onChangeDates = (
+    date: any[],
+    dateString: string[]
+  ) => {
+    if (date.length > 0) {
+      setDates(dateString);
+    }
+  };
+  
 
   const handleCancel = () => {
     navigate('/');
@@ -80,15 +90,15 @@ const CreateMeeting: React.FC = () => {
             //   rules={[{ required: true, message: 'Please select at least one date' }]}
             >
                 <div className="date-picker">
-                <DatePicker multiple maxTagCount="responsive" format="MM/DD/YYYY" getPopupContainer={(trigger: HTMLElement) => trigger.parentElement || document.body} />
+                <DatePicker multiple maxTagCount="responsive" format="MM/DD/YYYY" getPopupContainer={(trigger: HTMLElement) => trigger.parentElement || document.body} onChange={onChangeDates} />
                 </div>
             </Form.Item>
             <Form.Item
               name="time"
-            //   rules={[{ required: true, message: 'Please select the time' }]}
+              // rules={[{ required: true, message: 'Please select the time' }]}
             >
                 <div className="time-picker">
-                <TimePicker.RangePicker format="h:mm a" className="time-picker" />
+                <TimePicker.RangePicker format="h:mm a" className="time-picker" onChange={onChangeTime} />
                 </div>
             </Form.Item>
             <Form.Item>
