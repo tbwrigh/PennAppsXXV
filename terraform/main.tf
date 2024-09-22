@@ -43,6 +43,58 @@ resource "aws_dynamodb_table" "user_table" {
   }
 }
 
+resource "aws_dynamodb_table" "meeting_table" {
+  name         = "pennapps-meeting-table"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "meeting_id"
+
+  attribute {
+    name = "meeting_id"
+    type = "S"
+  }
+
+  tags = {
+    Name = "MeetingTable"
+  }
+}
+
+resource "aws_dynamodb_table" "user_meeting_table" {
+  name         = "pennapps-user-meeting-table"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "join_id"
+
+  attribute {
+    name = "join_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "user_id"
+    type = "S"
+  }
+
+   attribute {
+    name = "meeting_id"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name            = "UserIndex"
+    hash_key        = "user_id"
+    projection_type = "ALL"
+  }
+
+  global_secondary_index {
+    name            = "MeetingIndex"
+    hash_key        = "meeting_id"
+    projection_type = "ALL"
+  }
+
+  tags = {
+    Name = "JoinTable"
+  }
+}
+
 # IAM Role for Lambda Execution
 resource "aws_iam_role" "lambda_execution_role" {
   name = "pennapps_lambda_execution_role"
@@ -154,8 +206,47 @@ resource "aws_lambda_function" "user_profile_lambda" {
   ]
 }
 
+data "archive_file" "meeting_lambda_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../lambdas/meeting"
+  output_path = "${path.module}/zips/meeting.zip"
+}
+
+# Lambda Function for User Profile
+resource "aws_lambda_function" "meeting_lambda" {
+  function_name = "meeting-handler"
+  role          = aws_iam_role.lambda_execution_role.arn
+  handler       = "main.lambda_handler"
+  runtime       = "python3.12"
+  timeout       = 15
+  memory_size   = 128
+
+  filename = data.archive_file.meeting_lambda_zip.output_path
+
+  layers = [aws_lambda_layer_version.pyjwt_layer.arn]
+
+  environment {
+    variables = {
+      # "COGNITO_JWKS_URL" = "https://cognito-idp.us-east-1.amazonaws.com/${data.aws_cognito_user_pool.amplify_user_pool.id}/.well-known/jwks.json"
+      "COGNITO_JWKS_URL"      = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_03Q4wxd82/.well-known/jwks.json"
+      "COGNITO_APP_CLIENT_ID" = "1173v3nt69bv8ujap218nrq2do"
+    }
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_execution_policy_attachment,
+    aws_iam_role_policy_attachment.lambda_logging_policy_attachment
+  ]
+}
+
+
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
   name              = "/aws/lambda/${aws_lambda_function.user_profile_lambda.function_name}"
+  retention_in_days = 7
+}
+
+resource "aws_cloudwatch_log_group" "lambda_meeting_log_group" {
+  name              = "/aws/lambda/${aws_lambda_function.meeting_lambda.function_name}"
   retention_in_days = 7
 }
 
@@ -171,11 +262,43 @@ resource "aws_api_gateway_resource" "user" {
   parent_id   = aws_api_gateway_rest_api.user_api.root_resource_id
   path_part   = "user"
 }
-# GET method on /user (public)
+
+# /meeting resource
+resource "aws_api_gateway_resource" "meeting" {
+  rest_api_id = aws_api_gateway_rest_api.user_api.id
+  parent_id   = aws_api_gateway_rest_api.user_api.root_resource_id
+  path_part   = "meeting"
+}
+
+# GET method on /user
 resource "aws_api_gateway_method" "get_user" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
   resource_id   = aws_api_gateway_resource.user.id
   http_method   = "GET"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.header.Authorization" = false
+  }
+}
+
+# GET method on /meeting
+resource "aws_api_gateway_method" "get_meeting" {
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  resource_id   = aws_api_gateway_resource.meeting.id
+  http_method   = "GET"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.header.Authorization" = false
+  }
+}
+
+# POST method on /meeting
+resource "aws_api_gateway_method" "post_meeting" {
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  resource_id   = aws_api_gateway_resource.meeting.id
+  http_method   = "POST"
   authorization = "NONE"
 
   request_parameters = {
@@ -195,6 +318,30 @@ resource "aws_api_gateway_method" "put_user" {
   }
 }
 
+# PUT method on /meeting (authenticated)
+resource "aws_api_gateway_method" "put_meeting" {
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  resource_id   = aws_api_gateway_resource.meeting.id
+  http_method   = "PUT"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.header.Authorization" = false
+  }
+}
+
+# DELETE method on /meeting (authenticated)
+resource "aws_api_gateway_method" "delete_meeting" {
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  resource_id   = aws_api_gateway_resource.meeting.id
+  http_method   = "DELETE"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.header.Authorization" = false
+  }
+}
+
 # API Gateway Integration for GET method
 resource "aws_api_gateway_integration" "get_user_integration" {
   rest_api_id             = aws_api_gateway_rest_api.user_api.id
@@ -203,6 +350,26 @@ resource "aws_api_gateway_integration" "get_user_integration" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.user_profile_lambda.invoke_arn
+}
+
+# API Gateway Integration for GET method
+resource "aws_api_gateway_integration" "get_meeting_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.user_api.id
+  resource_id             = aws_api_gateway_resource.meeting.id
+  http_method             = aws_api_gateway_method.get_meeting.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.meeting_lambda.invoke_arn
+}
+
+# API Gateway Integration for POST method
+resource "aws_api_gateway_integration" "post_meeting_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.user_api.id
+  resource_id             = aws_api_gateway_resource.meeting.id
+  http_method             = aws_api_gateway_method.post_meeting.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.meeting_lambda.invoke_arn
 }
 
 # API Gateway Integration for PUT method
@@ -215,9 +382,36 @@ resource "aws_api_gateway_integration" "put_user_integration" {
   uri                     = aws_lambda_function.user_profile_lambda.invoke_arn
 }
 
+# API Gateway Integration for PUT method
+resource "aws_api_gateway_integration" "put_meeting_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.user_api.id
+  resource_id             = aws_api_gateway_resource.meeting.id
+  http_method             = aws_api_gateway_method.put_meeting.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.meeting_lambda.invoke_arn
+}
+
+# API Gateway Integration for DELETE method
+resource "aws_api_gateway_integration" "delete_meeting_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.user_api.id
+  resource_id             = aws_api_gateway_resource.meeting.id
+  http_method             = aws_api_gateway_method.delete_meeting.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.meeting_lambda.invoke_arn
+}
+
 resource "aws_api_gateway_method" "options_user" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
   resource_id   = aws_api_gateway_resource.user.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_method" "options_meeting" {
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  resource_id   = aws_api_gateway_resource.meeting.id
   http_method   = "OPTIONS"
   authorization = "NONE"
 }
@@ -239,11 +433,42 @@ resource "aws_api_gateway_integration" "options_user_integration" {
   depends_on = [aws_api_gateway_method.options_user]
 }
 
+resource "aws_api_gateway_integration" "options_meeting_integration" {
+  rest_api_id          = aws_api_gateway_rest_api.user_api.id
+  resource_id          = aws_api_gateway_resource.meeting.id
+  http_method          = aws_api_gateway_method.options_meeting.http_method
+  type                 = "MOCK"
+  passthrough_behavior = "WHEN_NO_MATCH"
+  request_templates = {
+    "application/json" = jsonencode(
+      {
+        statusCode = 200
+      }
+    )
+  }
+
+  depends_on = [aws_api_gateway_method.options_meeting]
+}
+
 
 resource "aws_api_gateway_method_response" "options_user_response" {
   rest_api_id = aws_api_gateway_rest_api.user_api.id
   resource_id = aws_api_gateway_resource.user.id
   http_method = aws_api_gateway_method.options_user.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"     = true
+    "method.response.header.Access-Control-Allow-Methods"     = true
+    "method.response.header.Access-Control-Allow-Origin"      = true
+    "method.response.header.Access-Control-Allow-Credentials" = true
+  }
+}
+
+resource "aws_api_gateway_method_response" "options_meeting_response" {
+  rest_api_id = aws_api_gateway_rest_api.user_api.id
+  resource_id = aws_api_gateway_resource.meeting.id
+  http_method = aws_api_gateway_method.options_meeting.http_method
   status_code = "200"
 
   response_parameters = {
@@ -270,11 +495,37 @@ resource "aws_api_gateway_integration_response" "options_user_integration_respon
   }
 }
 
+resource "aws_api_gateway_integration_response" "options_meeting_integration_response" {
+  depends_on = [aws_api_gateway_integration.options_meeting_integration]
+
+  rest_api_id = aws_api_gateway_rest_api.user_api.id
+  resource_id = aws_api_gateway_resource.meeting.id
+  http_method = aws_api_gateway_method.options_meeting.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"     = "'*'"
+    "method.response.header.Access-Control-Allow-Methods"     = "'GET,PUT,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"      = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials" = "'true'"
+  }
+}
+
+
 # Permission to allow API Gateway to invoke Lambda
 resource "aws_lambda_permission" "allow_api_gateway" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.user_profile_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.user_api.execution_arn}/*/*"
+}
+
+# Permission to allow API Gateway to invoke Lambda
+resource "aws_lambda_permission" "allow_api_gateway_meeting" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.meeting_lambda.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.user_api.execution_arn}/*/*"
 }
@@ -335,7 +586,12 @@ resource "aws_api_gateway_deployment" "user_api_deployment" {
   depends_on = [
     aws_api_gateway_integration.get_user_integration,
     aws_api_gateway_integration.put_user_integration,
-    aws_api_gateway_integration.options_user_integration
+    aws_api_gateway_integration.options_user_integration,
+    aws_api_gateway_integration.get_meeting_integration,
+    aws_api_gateway_integration.post_meeting_integration,
+    aws_api_gateway_integration.put_meeting_integration,
+    aws_api_gateway_integration.delete_meeting_integration,
+    aws_api_gateway_integration.options_meeting_integration
   ]
   rest_api_id = aws_api_gateway_rest_api.user_api.id
 }
