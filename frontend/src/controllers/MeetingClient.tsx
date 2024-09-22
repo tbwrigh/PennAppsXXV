@@ -3,7 +3,7 @@ import MeetingInfo from "../types/MeetingInfo";
 
 interface MeetingResponse {
     message: string,
-    meeting_id: string
+    meeting_id: string|null
 }
 
 interface MeetingPutBody {
@@ -22,7 +22,7 @@ export class MeetingClient extends ApiClient {
         return this.fetchAuthenticated(this.endpoint, 'GET') as Promise<MeetingInfo[]>;
     }
 
-    public postMeeting(name: string, desc: string, days: string[], start: string, end: string): Promise<MeetingResponse> {
+    public async postMeeting(name: string, desc: string, days: string[], start: string, end: string): Promise<MeetingResponse> {
         const data = {
             name: name,
             description: desc,
@@ -33,7 +33,7 @@ export class MeetingClient extends ApiClient {
         return this.fetchAuthenticated(this.endpoint, 'POST', data) as Promise<MeetingResponse>;
     }
 
-    public putMeeting(meeting_id: string, name?: string, desc?: string, days?: string[], start?: string, end?: string): Promise<MeetingResponse> {
+    public async putMeeting(meeting_id: string, name?: string, desc?: string, days?: string[], start?: string, end?: string): Promise<MeetingResponse> {
         const data: MeetingPutBody = {
             meeting_id: meeting_id
         } as MeetingPutBody;
@@ -47,7 +47,7 @@ export class MeetingClient extends ApiClient {
         return this.fetchAuthenticated(this.endpoint, 'PUT', data) as Promise<MeetingResponse>;
     }
 
-    public deleteMeeting(meeting_id: string): Promise<MeetingResponse> {
+    public async deleteMeeting(meeting_id: string): Promise<MeetingResponse> {
         const data = {
             meeting_id: meeting_id
         };
