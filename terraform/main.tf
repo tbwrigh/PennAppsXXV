@@ -251,7 +251,7 @@ data "archive_file" "sharing_lambda_zip" {
 
 # Lambda Function for User Profile
 resource "aws_lambda_function" "sharing_lambda" {
-  function_name = "meeting-handler"
+  function_name = "sharing-handler"
   role          = aws_iam_role.lambda_execution_role.arn
   handler       = "main.lambda_handler"
   runtime       = "python3.12"
@@ -287,7 +287,7 @@ resource "aws_cloudwatch_log_group" "lambda_meeting_log_group" {
   retention_in_days = 7
 }
 
-resource "aws_cloudwatch_log_group" "lambda_meeting_log_group" {
+resource "aws_cloudwatch_log_group" "lambda_sharing_log_group" {
   name              = "/aws/lambda/${aws_lambda_function.sharing_lambda.function_name}"
   retention_in_days = 7
 }
@@ -335,6 +335,18 @@ resource "aws_api_gateway_method" "get_user" {
 resource "aws_api_gateway_method" "get_meeting" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
   resource_id   = aws_api_gateway_resource.meeting.id
+  http_method   = "GET"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.header.Authorization" = false
+  }
+}
+
+# GET method on /sharing
+resource "aws_api_gateway_method" "get_sharing" {
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  resource_id   = aws_api_gateway_resource.sharing.id
   http_method   = "GET"
   authorization = "NONE"
 
@@ -435,6 +447,16 @@ resource "aws_api_gateway_integration" "get_meeting_integration" {
   uri                     = aws_lambda_function.meeting_lambda.invoke_arn
 }
 
+# API Gateway Integration for GET method
+resource "aws_api_gateway_integration" "get_sharing_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.user_api.id
+  resource_id             = aws_api_gateway_resource.sharing.id
+  http_method             = aws_api_gateway_method.get_sharing.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.sharing_lambda.invoke_arn
+}
+
 # API Gateway Integration for POST method
 resource "aws_api_gateway_integration" "post_meeting_integration" {
   rest_api_id             = aws_api_gateway_rest_api.user_api.id
@@ -472,7 +494,7 @@ resource "aws_api_gateway_integration" "put_sharing_integration" {
   http_method             = aws_api_gateway_method.put_sharing.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.meeting_lambda.invoke_arn
+  uri                     = aws_lambda_function.sharing_lambda.invoke_arn
 }
 
 # API Gateway Integration for DELETE method
@@ -492,7 +514,7 @@ resource "aws_api_gateway_integration" "delete_sharing_integration" {
   http_method             = aws_api_gateway_method.delete_sharing.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.meeting_lambda.invoke_arn
+  uri                     = aws_lambda_function.sharing_lambda.invoke_arn
 }
 
 resource "aws_api_gateway_method" "options_user" {
@@ -651,7 +673,7 @@ resource "aws_api_gateway_integration_response" "options_sharing_integration_res
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers"     = "'*'"
-    "method.response.header.Access-Control-Allow-Methods"     = "'PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Methods"     = "'GET,PUT,DELETE,OPTIONS'"
     "method.response.header.Access-Control-Allow-Origin"      = "'*'"
     "method.response.header.Access-Control-Allow-Credentials" = "'true'"
   }
@@ -748,7 +770,8 @@ resource "aws_api_gateway_deployment" "user_api_deployment" {
     aws_api_gateway_integration.options_meeting_integration,
     aws_api_gateway_integration.delete_sharing_integration,
     aws_api_gateway_integration.options_sharing_integration,
-    aws_api_gateway_integration.put_sharing_integration
+    aws_api_gateway_integration.put_sharing_integration,
+    aws_api_gateway_integration.get_sharing_integration
   ]
   rest_api_id = aws_api_gateway_rest_api.user_api.id
 }

@@ -37,7 +37,9 @@ def lambda_handler(event, context):
         
         http_method = event['httpMethod']
 
-        if http_method == 'PUT':
+        if http_method == 'GET':
+            return get_sharing(event, headers)
+        elif http_method == 'PUT':
             return put_sharing(event, headers)
         elif http_method == 'DELETE':
             return delete_sharing(event, headers)
@@ -50,6 +52,30 @@ def lambda_handler(event, context):
     except Exception as e:
         print("SOMETHING WENT WRONG...")
         raise e
+    
+
+def get_sharing(event, headers):
+    auth_token = event['headers']['Authorization']
+    user = get_user_from_token(auth_token)
+
+    joins = joins_table.query(
+        IndexName='UserIndex',
+        KeyConditionExpression=boto3.dynamodb.conditions.Key('user_id').eq(user['user_id'])
+    )
+
+    meeting_ids = [join['meeting_id'] for join in joins['Items']]
+
+    response = meetings_table.scan(
+        FilterExpression=boto3.dynamodb.conditions.Attr('meeting_id').is_in(meeting_ids)
+    )
+
+    meetings = response.get('Items', [])
+
+    return {
+            'headers': headers,
+            'statusCode': 200,
+            'body': json.dumps(meetings)
+        }
   
 
 def put_sharing(event, headers):
