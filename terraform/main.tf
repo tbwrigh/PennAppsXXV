@@ -243,6 +243,39 @@ resource "aws_lambda_function" "meeting_lambda" {
   ]
 }
 
+data "archive_file" "sharing_lambda_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../lambdas/sharing"
+  output_path = "${path.module}/zips/sharing.zip"
+}
+
+# Lambda Function for User Profile
+resource "aws_lambda_function" "sharing_lambda" {
+  function_name = "meeting-handler"
+  role          = aws_iam_role.lambda_execution_role.arn
+  handler       = "main.lambda_handler"
+  runtime       = "python3.12"
+  timeout       = 15
+  memory_size   = 128
+
+  filename = data.archive_file.sharing_lambda_zip.output_path
+
+  layers = [aws_lambda_layer_version.pyjwt_layer.arn]
+
+  environment {
+    variables = {
+      # "COGNITO_JWKS_URL" = "https://cognito-idp.us-east-1.amazonaws.com/${data.aws_cognito_user_pool.amplify_user_pool.id}/.well-known/jwks.json"
+      "COGNITO_JWKS_URL"      = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_03Q4wxd82/.well-known/jwks.json"
+      "COGNITO_APP_CLIENT_ID" = "1173v3nt69bv8ujap218nrq2do"
+    }
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_execution_policy_attachment,
+    aws_iam_role_policy_attachment.lambda_logging_policy_attachment
+  ]
+}
+
 
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
   name              = "/aws/lambda/${aws_lambda_function.user_profile_lambda.function_name}"
@@ -251,6 +284,11 @@ resource "aws_cloudwatch_log_group" "lambda_log_group" {
 
 resource "aws_cloudwatch_log_group" "lambda_meeting_log_group" {
   name              = "/aws/lambda/${aws_lambda_function.meeting_lambda.function_name}"
+  retention_in_days = 7
+}
+
+resource "aws_cloudwatch_log_group" "lambda_meeting_log_group" {
+  name              = "/aws/lambda/${aws_lambda_function.sharing_lambda.function_name}"
   retention_in_days = 7
 }
 
@@ -272,6 +310,13 @@ resource "aws_api_gateway_resource" "meeting" {
   rest_api_id = aws_api_gateway_rest_api.user_api.id
   parent_id   = aws_api_gateway_rest_api.user_api.root_resource_id
   path_part   = "meeting"
+}
+
+# /sharing resource
+resource "aws_api_gateway_resource" "sharing" {
+  rest_api_id = aws_api_gateway_rest_api.user_api.id
+  parent_id   = aws_api_gateway_rest_api.user_api.root_resource_id
+  path_part   = "sharing"
 }
 
 # GET method on /user
@@ -334,10 +379,34 @@ resource "aws_api_gateway_method" "put_meeting" {
   }
 }
 
+# PUT method on /sharing (authenticated)
+resource "aws_api_gateway_method" "put_sharing" {
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  resource_id   = aws_api_gateway_resource.sharing.id
+  http_method   = "PUT"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.header.Authorization" = false
+  }
+}
+
 # DELETE method on /meeting (authenticated)
 resource "aws_api_gateway_method" "delete_meeting" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
   resource_id   = aws_api_gateway_resource.meeting.id
+  http_method   = "DELETE"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.header.Authorization" = false
+  }
+}
+
+# DELETE method on /sharing (authenticated)
+resource "aws_api_gateway_method" "delete_sharing" {
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  resource_id   = aws_api_gateway_resource.sharing.id
   http_method   = "DELETE"
   authorization = "NONE"
 
@@ -396,11 +465,31 @@ resource "aws_api_gateway_integration" "put_meeting_integration" {
   uri                     = aws_lambda_function.meeting_lambda.invoke_arn
 }
 
+# API Gateway Integration for PUT method
+resource "aws_api_gateway_integration" "put_sharing_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.user_api.id
+  resource_id             = aws_api_gateway_resource.sharing.id
+  http_method             = aws_api_gateway_method.put_sharing.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.meeting_lambda.invoke_arn
+}
+
 # API Gateway Integration for DELETE method
 resource "aws_api_gateway_integration" "delete_meeting_integration" {
   rest_api_id             = aws_api_gateway_rest_api.user_api.id
   resource_id             = aws_api_gateway_resource.meeting.id
   http_method             = aws_api_gateway_method.delete_meeting.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.meeting_lambda.invoke_arn
+}
+
+# API Gateway Integration for DELETE method
+resource "aws_api_gateway_integration" "delete_sharing_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.user_api.id
+  resource_id             = aws_api_gateway_resource.sharing.id
+  http_method             = aws_api_gateway_method.delete_sharing.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.meeting_lambda.invoke_arn
@@ -416,6 +505,13 @@ resource "aws_api_gateway_method" "options_user" {
 resource "aws_api_gateway_method" "options_meeting" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
   resource_id   = aws_api_gateway_resource.meeting.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_method" "options_sharing" {
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  resource_id   = aws_api_gateway_resource.sharing.id
   http_method   = "OPTIONS"
   authorization = "NONE"
 }
@@ -454,6 +550,22 @@ resource "aws_api_gateway_integration" "options_meeting_integration" {
   depends_on = [aws_api_gateway_method.options_meeting]
 }
 
+resource "aws_api_gateway_integration" "options_sharing_integration" {
+  rest_api_id          = aws_api_gateway_rest_api.user_api.id
+  resource_id          = aws_api_gateway_resource.sharing.id
+  http_method          = aws_api_gateway_method.options_sharing.http_method
+  type                 = "MOCK"
+  passthrough_behavior = "WHEN_NO_MATCH"
+  request_templates = {
+    "application/json" = jsonencode(
+      {
+        statusCode = 200
+      }
+    )
+  }
+
+  depends_on = [aws_api_gateway_method.options_sharing]
+}
 
 resource "aws_api_gateway_method_response" "options_user_response" {
   rest_api_id = aws_api_gateway_rest_api.user_api.id
@@ -473,6 +585,20 @@ resource "aws_api_gateway_method_response" "options_meeting_response" {
   rest_api_id = aws_api_gateway_rest_api.user_api.id
   resource_id = aws_api_gateway_resource.meeting.id
   http_method = aws_api_gateway_method.options_meeting.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"     = true
+    "method.response.header.Access-Control-Allow-Methods"     = true
+    "method.response.header.Access-Control-Allow-Origin"      = true
+    "method.response.header.Access-Control-Allow-Credentials" = true
+  }
+}
+
+resource "aws_api_gateway_method_response" "options_sharing_response" {
+  rest_api_id = aws_api_gateway_rest_api.user_api.id
+  resource_id = aws_api_gateway_resource.sharing.id
+  http_method = aws_api_gateway_method.options_sharing.http_method
   status_code = "200"
 
   response_parameters = {
@@ -509,7 +635,23 @@ resource "aws_api_gateway_integration_response" "options_meeting_integration_res
 
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers"     = "'*'"
-    "method.response.header.Access-Control-Allow-Methods"     = "'GET,PUT,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Methods"     = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"      = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials" = "'true'"
+  }
+}
+
+resource "aws_api_gateway_integration_response" "options_sharing_integration_response" {
+  depends_on = [aws_api_gateway_integration.options_sharing_integration]
+
+  rest_api_id = aws_api_gateway_rest_api.user_api.id
+  resource_id = aws_api_gateway_resource.sharing.id
+  http_method = aws_api_gateway_method.options_sharing.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"     = "'*'"
+    "method.response.header.Access-Control-Allow-Methods"     = "'PUT,DELETE,OPTIONS'"
     "method.response.header.Access-Control-Allow-Origin"      = "'*'"
     "method.response.header.Access-Control-Allow-Credentials" = "'true'"
   }
@@ -530,6 +672,14 @@ resource "aws_lambda_permission" "allow_api_gateway_meeting" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.meeting_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.user_api.execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "allow_api_gateway_sharing" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.sharing_lambda.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.user_api.execution_arn}/*/*"
 }
@@ -595,7 +745,10 @@ resource "aws_api_gateway_deployment" "user_api_deployment" {
     aws_api_gateway_integration.post_meeting_integration,
     aws_api_gateway_integration.put_meeting_integration,
     aws_api_gateway_integration.delete_meeting_integration,
-    aws_api_gateway_integration.options_meeting_integration
+    aws_api_gateway_integration.options_meeting_integration,
+    aws_api_gateway_integration.delete_sharing_integration,
+    aws_api_gateway_integration.options_sharing_integration,
+    aws_api_gateway_integration.put_sharing_integration
   ]
   rest_api_id = aws_api_gateway_rest_api.user_api.id
 }
