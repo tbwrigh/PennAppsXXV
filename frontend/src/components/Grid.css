@@ -1,6 +1,6 @@
 .availability-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr); /* Adjust as needed */
+    grid-template-columns: repeat(5,1fr); /* Adjust as needed */
     grid-template-rows: repeat(8, 1fr); /* Adjust as needed */
     gap: 10px; /* Optional: space between cells */
   }
@@ -27,7 +27,14 @@
   }
   
   .availability-box {
-    background-color: #4caf50; /* Example color for availability */
-    width: 80%;
+    width: 100%;
     height: 100%;
+  }
+
+  .availability-box.green {
+    background-color: #4caf50;
+  }
+
+  .availability-box.white {
+    background-color: white;
   }

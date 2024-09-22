@@ -15,19 +15,19 @@ import { Dropdown, Space } from 'antd';
 
 const items: MenuProps['items'] = [
   {
-    label: <a>12/1</a>,
+    label: <a>12/1 12:00 PM - 6:00 PM</a>,
     key: '0',
   },
   {
-    label: <a>12/3</a>,
+    label: <a>12/3 3:00 PM - 9:00 PM</a>,
     key: '1',
   },
   {
-    label: <a>12/4</a>,
+    label: <a>12/4 8:00 AM - 2:00 PM</a>,
     key: '2',
   },
   {
-    label: <a>12/6</a>,
+    label: <a>12/6 8:00 AM - 2:00 PM</a>,
     key: '3',
   },
 ];
@@ -40,6 +40,7 @@ const Meeting: React.FC = () => {
   const [clearSelect, setClearSelect] = useState(false); // State to clear the Select component
   const [isAvailabilityModalVisible, setAvailabilityModalVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isClicked, setIsClicked] = useState(false);
   const [userID, setUserID] = useState("");
   const navigate = useNavigate(); // Used for the back button
   const meetingClient = new MeetingClient();
@@ -162,20 +163,18 @@ const Meeting: React.FC = () => {
           </Tabs.TabPane>
         </Tabs>
         
-        Dropdown for Date Selection
-        <Card title="Select a Date" className="date-dropdown">
         <div className="dropdown">
         <Dropdown menu={{ items }} trigger={['click']}>
-          <a onClick={(e) => e.preventDefault()}>
+          <a onClick={(e) => setIsClicked(true)}>
             <Space>
-              Choose a date: Click me
-              <DownOutlined />
+              <h5>Choose a date and time: Click me
+              <DownOutlined /></h5>
             </Space>
           </a>
         </Dropdown>
         </div>
-        <Grid />
-        </Card> 
+        {isClicked && <Grid />}
+      
 
         {/* Modal for Share Form */}
         <Modal

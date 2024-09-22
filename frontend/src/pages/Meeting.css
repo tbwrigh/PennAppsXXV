@@ -11,7 +11,7 @@
   /* Common container for the header and tabs */
   .meeting-content {
     width: 40vw; /* Set max width to match the tabs and header */
-    height: 82vh;
+    height: 120vh;
     margin-top: 2px;
     padding: 2rem;
     justify-content: center;
