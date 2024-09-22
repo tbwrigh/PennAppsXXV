@@ -70,19 +70,19 @@ resource "aws_iam_policy" "lambda_dynamodb_s3_policy" {
       {
         "Effect" : "Allow",
         "Action" : [
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "s3:GetObject",
-          "s3:PutObject"
+          "dynamodb:*",
+          "s3:*"
         ],
         "Resource" : [
           aws_dynamodb_table.user_table.arn,
-          aws_s3_bucket.user_profile_bucket.arn
+          "${aws_dynamodb_table.user_table.arn}/index/*",
+          "${aws_s3_bucket.user_profile_bucket.arn}/*"
         ]
       }
     ]
   })
 }
+
 
 resource "aws_iam_policy" "lambda_logging_policy" {
   name = "lambda_logging_policy"
@@ -102,8 +102,7 @@ resource "aws_iam_policy" "lambda_logging_policy" {
   })
 }
 
-
-# Attach the policy to the Lambda execution role
+# Attach the policies to the Lambda execution role
 resource "aws_iam_role_policy_attachment" "lambda_execution_policy_attachment" {
   role       = aws_iam_role.lambda_execution_role.name
   policy_arn = aws_iam_policy.lambda_dynamodb_s3_policy.arn
@@ -143,14 +142,21 @@ resource "aws_lambda_function" "user_profile_lambda" {
 
   environment {
     variables = {
-      "COGNITO_JWKS_URL" = "https://cognito-idp.us-east-1.amazonaws.com/${data.aws_cognito_user_pool.amplify_user_pool.id}/.well-known/jwks.json"
+      # "COGNITO_JWKS_URL" = "https://cognito-idp.us-east-1.amazonaws.com/${data.aws_cognito_user_pool.amplify_user_pool.id}/.well-known/jwks.json"
+      "COGNITO_JWKS_URL"      = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_03Q4wxd82/.well-known/jwks.json"
+      "COGNITO_APP_CLIENT_ID" = "1173v3nt69bv8ujap218nrq2do"
     }
   }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_execution_policy_attachment,
+    aws_iam_role_policy_attachment.lambda_logging_policy_attachment
+  ]
 }
 
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
   name              = "/aws/lambda/${aws_lambda_function.user_profile_lambda.function_name}"
-  retention_in_days = 7 # Optional: Set how long you want the logs to be retained
+  retention_in_days = 7
 }
 
 # API Gateway for Lambda
@@ -159,42 +165,34 @@ resource "aws_api_gateway_rest_api" "user_api" {
   description = "API to handle user profile (GET, PUT)."
 }
 
-# /user resource (both public and authenticated GET)
+# /user resource
 resource "aws_api_gateway_resource" "user" {
   rest_api_id = aws_api_gateway_rest_api.user_api.id
   parent_id   = aws_api_gateway_rest_api.user_api.root_resource_id
   path_part   = "user"
 }
-
-# Cognito Authorizer for PUT method
-resource "aws_api_gateway_authorizer" "cognito_authorizer" {
-  name            = "CognitoAuthorizer"
-  rest_api_id     = aws_api_gateway_rest_api.user_api.id
-  type            = "COGNITO_USER_POOLS" # Specify the correct authorizer type
-  identity_source = "method.request.header.Authorization"
-  provider_arns   = [data.aws_cognito_user_pool.amplify_user_pool.arn] # Reference to the Cognito User Pool
-}
-
-# Single GET method on /user
+# GET method on /user (public)
 resource "aws_api_gateway_method" "get_user" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
   resource_id   = aws_api_gateway_resource.user.id
   http_method   = "GET"
-  authorization = "NONE" # No authorization for public GET
+  authorization = "NONE"
 
-  # Allow an optional 'public' query parameter
   request_parameters = {
-    "method.request.querystring.public" : false
+    "method.request.header.Authorization" = false
   }
 }
 
-# PUT method now requires Cognito User Pool authentication
+# PUT method on /user (authenticated)
 resource "aws_api_gateway_method" "put_user" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
   resource_id   = aws_api_gateway_resource.user.id
   http_method   = "PUT"
-  authorization = "COGNITO_USER_POOLS" # Require Cognito User Pool authorization
-  authorizer_id = aws_api_gateway_authorizer.cognito_authorizer.id
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.header.Authorization" = false
+  }
 }
 
 # API Gateway Integration for GET method
@@ -217,6 +215,71 @@ resource "aws_api_gateway_integration" "put_user_integration" {
   uri                     = aws_lambda_function.user_profile_lambda.invoke_arn
 }
 
+
+
+
+
+resource "aws_api_gateway_method" "options_user" {
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  resource_id   = aws_api_gateway_resource.user.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "options_user_integration" {
+  rest_api_id          = aws_api_gateway_rest_api.user_api.id
+  resource_id          = aws_api_gateway_resource.user.id
+  http_method          = aws_api_gateway_method.options_user.http_method
+  type                 = "MOCK"
+  passthrough_behavior = "WHEN_NO_MATCH"
+  request_templates = {
+    "application/json" = jsonencode(
+      {
+        statusCode = 200
+      }
+    )
+  }
+
+
+  depends_on = [aws_api_gateway_method.options_user]
+}
+
+
+resource "aws_api_gateway_method_response" "options_user_response" {
+  rest_api_id = aws_api_gateway_rest_api.user_api.id
+  resource_id = aws_api_gateway_resource.user.id
+  http_method = aws_api_gateway_method.options_user.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"     = true
+    "method.response.header.Access-Control-Allow-Methods"     = true
+    "method.response.header.Access-Control-Allow-Origin"      = true
+    "method.response.header.Access-Control-Allow-Credentials" = true
+  }
+}
+
+resource "aws_api_gateway_integration_response" "options_user_integration_response" {
+  depends_on = [aws_api_gateway_integration.options_user_integration]
+
+  rest_api_id = aws_api_gateway_rest_api.user_api.id
+  resource_id = aws_api_gateway_resource.user.id
+  http_method = aws_api_gateway_method.options_user.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"     = "'*'"
+    "method.response.header.Access-Control-Allow-Methods"     = "'GET,PUT,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"      = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials" = "'true'"
+  }
+}
+
+
+
+
+
+
 # Permission to allow API Gateway to invoke Lambda
 resource "aws_lambda_permission" "allow_api_gateway" {
   statement_id  = "AllowAPIGatewayInvoke"
@@ -226,27 +289,19 @@ resource "aws_lambda_permission" "allow_api_gateway" {
   source_arn    = "${aws_api_gateway_rest_api.user_api.execution_arn}/*/*"
 }
 
-resource "aws_api_gateway_deployment" "user_api_deployment" {
-  depends_on = [
-    aws_api_gateway_integration.get_user_integration,
-    aws_api_gateway_integration.put_user_integration
-  ]
-  rest_api_id = aws_api_gateway_rest_api.user_api.id
-  stage_name  = "prod"
-}
-
+# IAM Role for API Gateway to write logs to CloudWatch
 resource "aws_iam_role" "api_gateway_logs_role" {
   name = "APIGatewayCloudWatchLogsRole"
 
   assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
+    "Version" : "2012-10-17",
+    "Statement" : [
       {
-        Effect = "Allow",
-        Principal = {
-          Service = "apigateway.amazonaws.com"
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "apigateway.amazonaws.com"
         },
-        Action = "sts:AssumeRole"
+        "Action" : "sts:AssumeRole"
       }
     ]
   })
@@ -256,11 +311,11 @@ resource "aws_iam_policy" "api_gateway_logs_policy" {
   name = "APIGatewayCloudWatchLogsPolicy"
 
   policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
+    "Version" : "2012-10-17",
+    "Statement" : [
       {
-        Effect = "Allow",
-        Action = [
+        "Effect" : "Allow",
+        "Action" : [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:DescribeLogGroups",
@@ -269,7 +324,7 @@ resource "aws_iam_policy" "api_gateway_logs_policy" {
           "logs:GetLogEvents",
           "logs:FilterLogEvents"
         ],
-        Resource = "arn:aws:logs:*:*:*"
+        "Resource" : "arn:aws:logs:*:*:*"
       }
     ]
   })
@@ -285,6 +340,18 @@ resource "aws_cloudwatch_log_group" "api_gateway_logs" {
   retention_in_days = 7
 }
 
+# API Gateway Deployment
+resource "aws_api_gateway_deployment" "user_api_deployment" {
+  depends_on = [
+    aws_api_gateway_integration.get_user_integration,
+    aws_api_gateway_integration.put_user_integration,
+    aws_api_gateway_integration.options_user_integration
+  ]
+  rest_api_id = aws_api_gateway_rest_api.user_api.id
+}
+
+# API Gateway Stage with Logging and Method Settings
+# Updated aws_api_gateway_stage without method_settings and cloudwatch_logs_role_arn
 resource "aws_api_gateway_stage" "prod" {
   deployment_id = aws_api_gateway_deployment.user_api_deployment.id
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
@@ -301,5 +368,28 @@ resource "aws_api_gateway_stage" "prod" {
       protocol          = "$context.protocol",
       responseLength    = "$context.responseLength"
     })
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  depends_on = [
+    aws_api_gateway_deployment.user_api_deployment
+  ]
+}
+
+resource "aws_api_gateway_method_settings" "prod" {
+  rest_api_id = aws_api_gateway_rest_api.user_api.id
+  stage_name  = aws_api_gateway_stage.prod.stage_name
+
+  method_path = "*/*" # Applies settings to all methods and resources
+
+  settings {
+    metrics_enabled        = true
+    logging_level          = "INFO" # Options: OFF, ERROR, or INFO
+    data_trace_enabled     = true
+    throttling_burst_limit = -1 # Optional: Adjust as needed
+    throttling_rate_limit  = -1 # Optional: Adjust as needed
   }
 }

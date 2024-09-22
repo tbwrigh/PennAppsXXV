@@ -11,9 +11,13 @@ def lambda_handler(event, context):
     print(event)
 
     allowedOrigins = ["http://localhost:5173", "https://main.d3gd132ioj1egw.amplifyapp.com"]
-    allowOrigin = '' 
-    if 'headers' in event and event['headers'] is not None and 'Origin' in event['headers']:
-        allowOrigin = event['headers']['Origin'] if event['headers']['Origin'] in allowedOrigins else ''
+    allowOrigin = 'http://localhost:5173'
+    if 'headers' in event and event['headers'] is not None:
+        headers_lower = {k.lower(): v for k, v in event['headers'].items()}
+        origin = headers_lower.get('origin')
+        if origin and origin in allowedOrigins:
+            allowOrigin = origin
+
 
     headers = {
         'Access-Control-Allow-Origin': allowOrigin, 
@@ -45,12 +49,8 @@ def lambda_handler(event, context):
                 'body': json.dumps('Method Not Allowed')
             }
     except Exception as e:
-        print(e)
-        return {
-                'headers': headers,
-                'statusCode': 500,
-                'body': json.dumps('Something Went Wrong...')
-            }
+        print("SOMETHING WENT WRONG...")
+        raise e
 
 def get_user_private(event, headers):
     auth_token = event['headers']['Authorization']
@@ -67,8 +67,8 @@ def get_user_private(event, headers):
 
     response = get_json_from_email(email)
 
-    if 'Item' in response:
-        user = response['Item']
+    if 'Items' in response and len(response['Items']) > 0:
+        user = response['Items'][0]
         return {
             'headers': headers,
             'statusCode': 200,
@@ -137,14 +137,14 @@ def put_user(event, headers):
 
     response = get_json_from_email(email)
 
-    if 'Item' not in response:
+    if 'Items' not in response or len(response['Items']) == 0:
         return {
             'headers': headers,
             'statusCode': 404,
             'body': json.dumps({'message': 'User not found'})
         }
     
-    user = response['Item']
+    user = response['Items'][0]
     
     body = json.loads(event['body'])
 
@@ -153,12 +153,11 @@ def put_user(event, headers):
 
     if 'username' in body:
         update_expression += "username = :u,"
-        expression_attribute_values[':u'] = {'S': body['username']}
+        expression_attribute_values[':u'] = body['username']
     
     update_expression = update_expression.rstrip(',')
-    dynamodb.update_item(
-        TableName=users_table,
-        Key={'user_id': {'S': user['user_id']}},
+    users_table.update_item(
+        Key={'user_id': user['user_id']},
         UpdateExpression=update_expression,
         ExpressionAttributeValues=expression_attribute_values)
     
@@ -174,9 +173,10 @@ def get_json_from_email(email):
         KeyConditionExpression=boto3.dynamodb.conditions.Key('email').eq(email)
     )
 
-def decode_jwt_token(token):
-    header = jwt.get_unverified_header(token)
-    
+def decode_jwt_token(token):    
+    if token.startswith('Bearer '):
+        token = token[len('Bearer '):]
+
     # Replace this with the actual public key URL for your Cognito pool
     jwks_url = os.environ['COGNITO_JWKS_URL']
 
