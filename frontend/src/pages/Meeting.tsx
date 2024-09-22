@@ -7,9 +7,7 @@ import AvailabilityForm from '../components/AvailabilityForm';
 import './Meeting.css';
 import MeetingInfo from '../types/MeetingInfo';
 import { MeetingClient } from '../controllers/MeetingClient';
-
-// Mock current logged-in user
-const currentUser = 'user1';
+import { UserClient } from '../controllers/UserClient';
 
 const Meeting: React.FC = () => {
   const { id } = useParams<{ id: string }>(); // Get the meeting ID from the route
@@ -18,8 +16,23 @@ const Meeting: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false); // Modal visibility state
   const [clearSelect, setClearSelect] = useState(false); // State to clear the Select component
   const [isAvailabilityModalVisible, setAvailabilityModalVisible] = useState(false);
+  const [userID, setUserID] = useState("");
   const navigate = useNavigate(); // Used for the back button
   const meetingClient = new MeetingClient();
+  const userClient = new UserClient();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await userClient.getSelf();
+        setUserID(user.id); // Set the username from the response
+      } catch (err) {
+        console.log("failed to load user")
+      }
+    };
+
+    fetchUser();  
+  }, [])
 
   useEffect(() => {
     const fetchMeetings = async () => {
@@ -90,7 +103,7 @@ const Meeting: React.FC = () => {
             <Button type="default" icon={<ShareAltOutlined />} onClick={showModal}>
               Share
             </Button>
-            {meeting.owner === currentUser && (
+            {meeting.owner === userID && (
               <Button type="primary" icon={<EditOutlined />} className="edit-button" onClick={updateEvent}>
                 Edit
               </Button>
