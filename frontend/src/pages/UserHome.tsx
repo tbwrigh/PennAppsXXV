@@ -8,20 +8,19 @@ import { UserClient } from '../controllers/UserClient';
 import User from '../types/User';
 
 import './UserHome.css';
-
-const meetings = [
-  { title: 'Team Sync', id: "1" },
-  { title: 'Project Review', id: "2" },
-  { title: 'Client Call', id: "3" },
-  { title: 'Design Discussion', id: "4" }
-];
+import { MeetingClient } from '../controllers/MeetingClient';
+import MeetingInfo from '../types/MeetingInfo';
 
 const Home: React.FC = () => {
     const navigate = useNavigate();
     const userClient = new UserClient();
+    const meetingClient = new MeetingClient();
 
     const [userInfo, setUserInfo] = useState<User|null>(null);
     const [loading, setLoading] = useState(true);
+
+    const [meetings, setMeetings] = useState<MeetingInfo[]>([]);
+    const [meetingLoading, setMeetingLoading] = useState(true);
 
     useEffect(() => {
       const fetchUser = async () => {
@@ -35,6 +34,20 @@ const Home: React.FC = () => {
       };
   
       fetchUser();  
+    }, [])
+
+    useEffect(() => {
+      const fetchMeetings = async () => {
+        try {
+          const m = await meetingClient.getMeetings();
+          setMeetings(m);
+          setMeetingLoading(false)
+        } catch (err) {
+          setMeetingLoading(false)
+        }
+      };
+
+      fetchMeetings();
     }, [])
 
     const meetingClick = (id: string) => {
@@ -52,6 +65,10 @@ const Home: React.FC = () => {
         <ThemeToggle />{}
         <Button type="primary" className="new-meeting-button" icon={<PlusOutlined />} onClick={newMeetingClick}>New Meeting</Button>
       </div>
+      
+
+      { !meetingLoading ? (
+        (meetings.length > 0) ? (
       <List
         className="meeting-list"
         dataSource={meetings}
@@ -59,18 +76,25 @@ const Home: React.FC = () => {
           <List.Item className="list-item">
             <Card className="meeting-card">
               <div className="card-content">
-                <span className="meeting-title">{item.title}</span>
+                <span className="meeting-title">{item.name}</span>
                 <Button
                   type="text"
                   icon={<RightOutlined />}
                   className="arrow-button"
-                  onClick={() => {meetingClick(item.id)}}
+                  onClick={() => {meetingClick(item.meeting_id)}}
                 />
               </div>
             </Card>
-          </List.Item>
+          </List.Item> 
         )}
       />
+    ) : (
+      <h1>No Meetings to Display</h1>
+    )
+    ) : (
+      <h1>Loading Meetings</h1>
+    ) }
+
     </div>
   );
 };
