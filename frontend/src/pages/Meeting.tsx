@@ -18,6 +18,7 @@ const Meeting: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false); // Modal visibility state
   const [clearSelect, setClearSelect] = useState(false); // State to clear the Select component
   const [isAvailabilityModalVisible, setAvailabilityModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate(); // Used for the back button
   const meetingClient = new MeetingClient();
 
@@ -26,8 +27,10 @@ const Meeting: React.FC = () => {
       try {
         const m = await meetingClient.getMeetings();
         setMeetings(m);
+        setIsLoading(false);
       } catch (err) {
-        console.log("failed to load meetings")
+        console.log("failed to load meetings");
+        setIsLoading(false);
       }
     };
 
@@ -40,6 +43,10 @@ const Meeting: React.FC = () => {
     setMeeting(foundMeeting || null);
   }, [id, meetings]);
 
+  if (isLoading) {
+    return <div></div>;
+  }
+  
   if (!meeting) {
     return <div>Meeting not found</div>;
   }

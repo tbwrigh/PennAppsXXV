@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap');
+
 /* Container for the header and button */
 .meeting-headers {
   display: flex;
@@ -68,4 +70,15 @@
   justify-content: center;
   margin-left: auto;
   color: #1890ff;
+}
+
+.text-centering {
+  text-align: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 10rem;
+  margin-right: 6rem;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 25px;
+  font-weight: 500;
 }

@@ -89,10 +89,10 @@ const Home: React.FC = () => {
         )}
       />
     ) : (
-      <h1>No Meetings to Display</h1>
+      <div className="text-centering">There Are No Meetings to Display</div>
     )
     ) : (
-      <h1>Loading Meetings</h1>
+      <div className="text-centering">Loading Meetings</div>
     ) }
 
     </div>
