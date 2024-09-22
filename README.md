@@ -88,7 +88,7 @@ To get started with Let's Meet locally, follow these steps:
 
 5. **Access the Application**
 
-   Open your browser and navigate to `http://localhost:3000` (or the port specified in your environment).
+   Open your browser and navigate to `http://localhost:5173` (or the port specified in your environment).
 
 ---
 
@@ -102,7 +102,7 @@ Once the application is running:
 
 2. **Create a Meeting**
 
-   Navigate to the "Create Meeting" section, input the meeting details, and schedule the time that suits everyone.
+   Navigate to the "Create Meeting" section, input the meeting details, and schedule the window for the meeting ot occur.
 
 3. **Manage Meetings**
 
@@ -111,6 +111,10 @@ Once the application is running:
 4. **Share Meetings**
 
    Share the meeting link or send invitations directly to your friends to join the scheduled meeting.
+
+5. **Respond to Meeting**
+
+    Set your availability and see other people's availability, so you can find the right time in the deisgnated window.
 
 ---
 
