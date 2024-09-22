@@ -1,11 +1,11 @@
 /* Container for the header and button */
-.meeting-header {
+.meeting-headers {
   display: flex;
   justify-content: space-between;
   align-items: center; /* Ensure vertical alignment */
   width: 100%;
   max-width: 600px; /* Match the card width */
-  margin-bottom: 20px;
+  margin-bottom: 0rem;
 }
 
 /* Adjust the h1 styling to align with the button */

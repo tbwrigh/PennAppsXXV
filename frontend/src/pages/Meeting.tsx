@@ -73,7 +73,7 @@ const Meeting: React.FC = () => {
       <div className="meeting-content">
         <div className="meeting-header">
           {/* Back Button */}
-          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} className="back-button">
+          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/')} className="back-button">
             Back
           </Button>
           <h1>{meeting.title}</h1>
