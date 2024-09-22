@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { Button, Form, Input, Card, TimePicker, DatePicker } from 'antd';
 import { CalendarOutlined, EditOutlined } from '@ant-design/icons';
-import { Dayjs } from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import './CreateMeeting.css';
 import { MeetingClient } from '../controllers/MeetingClient';
-import { Moment } from 'moment';
 
 interface CreateMeetingFormEntries {
   meeting_title: string,
@@ -50,9 +48,10 @@ const CreateMeeting: React.FC = () => {
 
   const onChangeDates = (
     date: any[],
-    dateString: string[]
+    dateString: string|string[]
   ) => {
     if (date.length > 0) {
+      if (!Array.isArray(dateString)) dateString = [dateString]
       setDates(dateString);
     }
   };
