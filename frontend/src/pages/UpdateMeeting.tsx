@@ -2,11 +2,11 @@ import React from 'react';
 import { Button, Form, Input, Card, TimePicker, DatePicker } from 'antd';
 import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
 import { CalendarOutlined, EditOutlined } from '@ant-design/icons';
-import { Dayjs } from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import './CreateMeeting.css';
 
-const CreateMeeting: React.FC = () => {
+const UpdateMeeting: React.FC = () => {
   const navigate = useNavigate();
 
   const onFinish = (values: Dayjs | null) => {
@@ -22,17 +22,34 @@ const CreateMeeting: React.FC = () => {
     console.log(date, dateString);
   };
 
+  const handleUpdate = () => {
+    console.log('Update Meeting');
+  };
+
+  const handleDelete = () => {
+    console.log('Delete Meeting');
+    navigate('/');
+  };
+
   const handleCancel = () => {
     navigate('/');
+  };
+
+  const initialValues = {
+    meeting_title: "ACM End of Year Party",
+    meeting_description: "Celebrate the end of the year with ACM!",
+    date: ["12/01/2024, 12/02/2024, 12/03/2024, 12/08/2024, 12/11/2024"],
+    time: [dayjs('3:00 pm'), dayjs('8:00 pm')],
   };
 
   return (
     <div className="wrapper">
       <div className="item">
-        <Card title="Create Meeting" className="card">
+        <Card title="Update Meeting" className="card">
         <div className="form-elements">
           <Form
             name="create_meeting"
+            initialValues={initialValues}
             onFinish={onFinish}
             onFinishFailed={onFinishFailed}
           >
@@ -67,8 +84,11 @@ const CreateMeeting: React.FC = () => {
             </Form.Item>
             <Form.Item>
               <div className="next-button-container">
-              <Button type="primary" htmlType="submit" className="next-button">
-                Create
+              <Button type="primary" htmlType="submit" className="next-button" onClick={handleUpdate}>
+                Update
+              </Button>
+              <Button type="primary" className="next-button" onClick={handleDelete}>
+                Delete
               </Button>
               <Button type="default" className="next-button" onClick={handleCancel}>
                 Cancel
@@ -83,4 +103,4 @@ const CreateMeeting: React.FC = () => {
   );
 };
 
-export default CreateMeeting;
+export default UpdateMeeting;

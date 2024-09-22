@@ -8,7 +8,7 @@ import SignUpForm from './components/SignUpForm';
 import CreateMeeting from './pages/CreateMeeting';
 import AuthenticatorComponents from './components/AuthenticatorComponents';
 import FormFields from './components/FormFields';
-import ThemeToggle from './components/ThemeToggle';
+import UpdateMeeting from './pages/UpdateMeeting';
 import './App.css';
 // import { useState } from 'react';
 
@@ -31,6 +31,7 @@ function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/meeting/:id" element={<Meeting />} />
             <Route path="/create" element={<CreateMeeting />} />
+            <Route path="/update/:id" element={<UpdateMeeting />} />
           </Routes>
         </Router>
       )}

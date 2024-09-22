@@ -64,6 +64,10 @@ const Meeting: React.FC = () => {
     setAvailabilityModalVisible(false);
   };
 
+  const updateEvent = () => {
+    navigate(`/update/${id}`);
+  }
+
   return (
     <div className="meeting-page">
       <div className="meeting-content">
@@ -78,7 +82,7 @@ const Meeting: React.FC = () => {
               Share
             </Button>
             {meeting.owner === currentUser && (
-              <Button type="primary" icon={<EditOutlined />} className="edit-button">
+              <Button type="primary" icon={<EditOutlined />} className="edit-button" onClick={updateEvent}>
                 Edit
               </Button>
             )}
