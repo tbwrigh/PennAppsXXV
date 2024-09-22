@@ -24,7 +24,7 @@ const Grid: React.FC = () => {
             if (personIndex === 3 && hour < 1) isGreen = true; // One cell green for Diana
 
             return (
-              <div className="hour-ticks" key={hour}>
+              <div className={`hour-ticks ${isGreen ? 'green' : 'white'}`} key={hour}>
                 <div className={`availability-boxes ${isGreen ? 'green' : 'white'}`}></div>
               </div>
             );
