@@ -179,8 +179,7 @@ def put_meeting(event, headers):
                 'meeting_id': meeting_id
             },
             UpdateExpression=update_expression,
-            ExpressionAttributeValues=expression_attribute_values,
-            ReturnValues="UPDATED_NEW"
+            ExpressionAttributeValues=expression_attribute_values
         )
 
         return {
@@ -188,7 +187,6 @@ def put_meeting(event, headers):
             'statusCode': 200,
             'body': json.dumps({
                 'message': 'Meeting successfully updated',
-                'updatedAttributes': response['Attributes']
             })
         }
     except Exception as e:
@@ -196,7 +194,7 @@ def put_meeting(event, headers):
             'headers': headers,
             'statusCode': 500,
             'body': json.dumps({
-                'error': str(e)
+                'message': str(e)
             })
         }
 
@@ -247,8 +245,7 @@ def delete_meeting(event, headers):
             'headers': headers,
             'statusCode': 200,
             'body': json.dumps({
-                'message': 'Meeting successfully deleted',
-                'meeting_id': meeting_id
+                'message': 'Meeting successfully deleted'
             })
         }
     except Exception as e:
@@ -256,7 +253,7 @@ def delete_meeting(event, headers):
             'headers': headers,
             'statusCode': 500,
             'body': json.dumps({
-                'error': str(e)
+                'message': str(e)
             })
         }
 
