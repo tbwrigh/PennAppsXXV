@@ -2,20 +2,20 @@ import React from 'react';
 import './Grid.css';
 
 const people = [
-  { name: 'Alice' },
-  { name: 'Bob' },
-  { name: 'Charlie' },
-  { name: 'Diana' },
+  { name: 'Jessica' },
+  { name: 'David' },
+  { name: 'Christine' },
+  { name: 'Ben' },
 ];
 
 const hours = Array.from({ length: 5 }, (_, i) => i); // Generate hours from 0 to 4
 
 const Grid: React.FC = () => {
   return (
-    <div className="availability-grid">
+    <div className="availability-grids">
       {people.map((person, personIndex) => (
-        <div className="availability-column" key={person.name}>
-          <div className="day-header">{person.name}</div>
+        <div className="availability-columns" key={person.name}>
+          <div className="day-headers">{person.name}</div>
           {hours.map((hour) => {
             let isGreen = false;
             if (personIndex === 0) isGreen = true; // All cells green for Alice
@@ -24,8 +24,8 @@ const Grid: React.FC = () => {
             if (personIndex === 3 && hour < 1) isGreen = true; // One cell green for Diana
 
             return (
-              <div className="hour-tick" key={hour}>
-                <div className={`availability-box ${isGreen ? 'green' : 'white'}`}></div>
+              <div className="hour-ticks" key={hour}>
+                <div className={`availability-boxes ${isGreen ? 'green' : 'white'}`}></div>
               </div>
             );
           })}

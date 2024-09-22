@@ -1,23 +1,23 @@
-.availability-grid {
+.availability-grids {
     display: grid;
     grid-template-columns: repeat(5,1fr); /* Adjust as needed */
     grid-template-rows: repeat(8, 1fr); /* Adjust as needed */
     gap: 10px; /* Optional: space between cells */
   }
   
-  .availability-column {
+  .availability-columns {
     display: flex;
     flex-direction: column;
   }
   
-  .day-header {
+  .day-headers {
     font-weight: bold;
     text-align: center;
     padding: 5px;
     background-color: #f0f0f0;
   }
   
-  .hour-tick {
+  .hour-ticks {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -26,15 +26,15 @@
     background-color: #f9f9f9; /* Optional: background color for each cell */
   }
   
-  .availability-box {
+  .availability-boxes {
     width: 100%;
     height: 100%;
   }
 
-  .availability-box.green {
+  .availability-boxes.green {
     background-color: #4caf50;
   }
 
-  .availability-box.white {
+  .availability-boxes.white {
     background-color: white;
   }
