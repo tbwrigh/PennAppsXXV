@@ -8,6 +8,7 @@ import SignUpForm from './components/SignUpForm';
 import CreateMeeting from './pages/CreateMeeting';
 import AuthenticatorComponents from './components/AuthenticatorComponents';
 import FormFields from './components/FormFields';
+import ThemeToggle from './components/ThemeToggle';
 import './App.css';
 // import { useState } from 'react';
 

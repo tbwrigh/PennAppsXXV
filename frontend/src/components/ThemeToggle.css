@@ -1,0 +1,26 @@
+/* Light mode styles */
+.light-mode {
+    background-color: #fafafa;
+    color: #000;
+  }
+  
+  .light-mode .app-header {
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  /* Dark mode styles */
+  .dark-mode {
+    background-color: #282828;
+    color: #fff;
+  }
+  
+  .dark-mode .app-header {
+    background-color: #444;
+    border-bottom: 1px solid #555;
+  }
+  
+  /* Common styles */
+  .theme-toggle {
+    padding: 10px;
+  }
