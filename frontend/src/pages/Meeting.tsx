@@ -26,7 +26,7 @@ const Meeting: React.FC = () => {
     const fetchUser = async () => {
       try {
         const user = await userClient.getSelf();
-        setUserID(user.id); // Set the username from the response
+        setUserID(user.user_id); // Set the username from the response
       } catch (err) {
         console.log("failed to load user")
       }
@@ -146,7 +146,7 @@ const Meeting: React.FC = () => {
           footer={null}  // Remove default modal footer
           onCancel={handleCancel}
         >
-          <ShareForm clearSelect={clearSelect} resetClearSelect={resetClearSelect} onShare={handleShare} />
+          <ShareForm meeting_id={id ?? ''} owner_id={meeting.owner} clearSelect={clearSelect} resetClearSelect={resetClearSelect} onShare={handleShare} />
           </Modal>
 
         {/* Modal for availability form */}

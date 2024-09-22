@@ -6,8 +6,8 @@ interface SharingResponse {
 }
 
 
-export class UserClient extends ApiClient {
-    private readonly endpoint = '/user';
+export class SharingClient extends ApiClient {
+    private readonly endpoint = '/sharing';
   
     // Authenticated GET method to fetch the current user (getSelf)
     public async getShares(meeting_id: string): Promise<User[]> {

@@ -55,12 +55,10 @@ def lambda_handler(event, context):
     
 
 def get_sharing(event, headers):
-    auth_token = event['headers']['Authorization']
-    user = get_user_from_token(auth_token)
-
     query_params = event.get('queryStringParameters', {})
+    meeting_id = query_params.get('meeting_id')
 
-    if 'meeting_id' not in query_params:
+    if not meeting_id:
         return {
             'headers': headers,
             'statusCode': 404,
@@ -68,8 +66,6 @@ def get_sharing(event, headers):
                 'message': 'message_id required'
             })
         }
-
-    meeting_id = query_params.get('meeting_id')
 
     joins = joins_table.query(
         IndexName='MeetingIndex',
