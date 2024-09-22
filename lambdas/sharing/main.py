@@ -58,15 +58,28 @@ def get_sharing(event, headers):
     auth_token = event['headers']['Authorization']
     user = get_user_from_token(auth_token)
 
+    query_params = event.get('queryStringParameters', {})
+
+    if 'meeting_id' not in query_params:
+        return {
+            'headers': headers,
+            'statusCode': 404,
+            'body': json.dumps({
+                'message': 'message_id required'
+            })
+        }
+
+    meeting_id = query_params.get('meeting_id')
+
     joins = joins_table.query(
-        IndexName='UserIndex',
-        KeyConditionExpression=boto3.dynamodb.conditions.Key('user_id').eq(user['user_id'])
+        IndexName='MeetingIndex',
+        KeyConditionExpression=boto3.dynamodb.conditions.Key('meeting_id').eq(meeting_id)
     )
 
-    meeting_ids = [join['meeting_id'] for join in joins['Items']]
+    user_ids = [join['user_id'] for join in joins['Items']]
 
-    response = meetings_table.scan(
-        FilterExpression=boto3.dynamodb.conditions.Attr('meeting_id').is_in(meeting_ids)
+    response = users_table.scan(
+        FilterExpression=boto3.dynamodb.conditions.Attr('user_id').is_in(user_ids)
     )
 
     meetings = response.get('Items', [])
@@ -85,6 +98,8 @@ def put_sharing(event, headers):
     body = json.loads(event['body'])
 
     meeting_id = body['meeting_id']
+    user_id = body['user_id']
+
 
     meeting = meetings_table.get_item(Key={'meeting_id': meeting_id})
 
@@ -102,48 +117,20 @@ def put_sharing(event, headers):
             'body': json.dumps({"message": "you're not the owner"})
         }
 
-    name = body.get('name')
-    description = body.get('description')
-    days = body.get('days')
-    start_time = body.get('start_time')
-    end_time = body.get('end_time')
-
-    update_expression = "SET "
-    expression_attribute_values = {}
-    
-    if name:
-        update_expression += "name = :n, "
-        expression_attribute_values[':n'] = name
-    if description:
-        update_expression += "description = :d, "
-        expression_attribute_values[':d'] = description
-    if days:
-        update_expression += "days = :ds, "
-        expression_attribute_values[':ds'] = days
-    if start_time:
-        update_expression += "start_time = :st, "
-        expression_attribute_values[':st'] = start_time
-    if end_time:
-        update_expression += "end_time = :et, "
-        expression_attribute_values[':et'] = end_time
-
-    # Remove the last trailing comma and space
-    update_expression = update_expression.rstrip(", ")
-
     try:
-        response = meetings_table.update_item(
-            Key={
-                'meeting_id': meeting_id
-            },
-            UpdateExpression=update_expression,
-            ExpressionAttributeValues=expression_attribute_values
+        response2 = joins_table.put_item(
+        Item = {
+            'join_id': str(uuid.uuid4()),
+            'user_id': user_id,
+            'meeting_id': meeting_id
+            }
         )
 
         return {
             'headers': headers,
             'statusCode': 200,
             'body': json.dumps({
-                'message': 'Meeting successfully updated',
+                'message': 'Meeting successfully shared',
             })
         }
     except Exception as e:
@@ -162,6 +149,7 @@ def delete_sharing(event, headers):
     body = json.loads(event['body'])
 
     meeting_id = body['meeting_id']
+    user_id = body['user_id']
 
     meeting = meetings_table.get_item(Key={'meeting_id': meeting_id})
 
@@ -180,12 +168,6 @@ def delete_sharing(event, headers):
         }
     
     try:
-
-        meetings_table.delete_item(
-            Key={'meeting_id': meeting_id},
-            ConditionExpression="attribute_exists(meeting_id)"
-        )
-
         joins = joins_table.query(
             IndexName='MeetingIndex',
             KeyConditionExpression=boto3.dynamodb.conditions.Key('meeting_id').eq(meeting_id)
@@ -193,16 +175,17 @@ def delete_sharing(event, headers):
 
         if "Items" in joins:
             for join in joins['Items']:
-                joins_table.delete_item(
-                    Key={'join_id': join['join_id']},
-                    ConditionExpression="attribute_exists(join_id)"
-                )
+                if join['user_id'] == user_id:
+                    joins_table.delete_item(
+                        Key={'join_id': join['join_id']},
+                        ConditionExpression="attribute_exists(join_id)"
+                    )
 
         return {
             'headers': headers,
             'statusCode': 200,
             'body': json.dumps({
-                'message': 'Meeting successfully deleted'
+                'message': 'Meeting successfully unshared'
             })
         }
     except Exception as e:

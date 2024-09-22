@@ -73,7 +73,7 @@ resource "aws_dynamodb_table" "user_meeting_table" {
     type = "S"
   }
 
-   attribute {
+  attribute {
     name = "meeting_id"
     type = "S"
   }
