@@ -276,6 +276,39 @@ resource "aws_lambda_function" "sharing_lambda" {
   ]
 }
 
+data "archive_file" "availability_lambda_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../lambdas/availability"
+  output_path = "${path.module}/zips/availability.zip"
+}
+
+# Lambda Function for User Profile
+resource "aws_lambda_function" "availability_lambda" {
+  function_name = "availability-handler"
+  role          = aws_iam_role.lambda_execution_role.arn
+  handler       = "main.lambda_handler"
+  runtime       = "python3.12"
+  timeout       = 15
+  memory_size   = 128
+
+  filename = data.archive_file.availability_lambda_zip.output_path
+
+  layers = [aws_lambda_layer_version.pyjwt_layer.arn]
+
+  environment {
+    variables = {
+      # "COGNITO_JWKS_URL" = "https://cognito-idp.us-east-1.amazonaws.com/${data.aws_cognito_user_pool.amplify_user_pool.id}/.well-known/jwks.json"
+      "COGNITO_JWKS_URL"      = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_03Q4wxd82/.well-known/jwks.json"
+      "COGNITO_APP_CLIENT_ID" = "1173v3nt69bv8ujap218nrq2do"
+    }
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_execution_policy_attachment,
+    aws_iam_role_policy_attachment.lambda_logging_policy_attachment
+  ]
+}
+
 
 resource "aws_cloudwatch_log_group" "lambda_log_group" {
   name              = "/aws/lambda/${aws_lambda_function.user_profile_lambda.function_name}"
@@ -319,6 +352,13 @@ resource "aws_api_gateway_resource" "sharing" {
   path_part   = "sharing"
 }
 
+# /availability resource
+resource "aws_api_gateway_resource" "availability" {
+  rest_api_id = aws_api_gateway_rest_api.user_api.id
+  parent_id   = aws_api_gateway_rest_api.user_api.root_resource_id
+  path_part   = "availability"
+}
+
 # GET method on /user
 resource "aws_api_gateway_method" "get_user" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
@@ -355,10 +395,34 @@ resource "aws_api_gateway_method" "get_sharing" {
   }
 }
 
+# GET method on /availability
+resource "aws_api_gateway_method" "get_availability" {
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  resource_id   = aws_api_gateway_resource.availability.id
+  http_method   = "GET"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.header.Authorization" = false
+  }
+}
+
 # POST method on /meeting
 resource "aws_api_gateway_method" "post_meeting" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
   resource_id   = aws_api_gateway_resource.meeting.id
+  http_method   = "POST"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.header.Authorization" = false
+  }
+}
+
+# POST method on /availability
+resource "aws_api_gateway_method" "post_availability" {
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  resource_id   = aws_api_gateway_resource.availability.id
   http_method   = "POST"
   authorization = "NONE"
 
@@ -427,6 +491,18 @@ resource "aws_api_gateway_method" "delete_sharing" {
   }
 }
 
+# DELETE method on /availability (authenticated)
+resource "aws_api_gateway_method" "delete_availability" {
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  resource_id   = aws_api_gateway_resource.availability.id
+  http_method   = "DELETE"
+  authorization = "NONE"
+
+  request_parameters = {
+    "method.request.header.Authorization" = false
+  }
+}
+
 # API Gateway Integration for GET method
 resource "aws_api_gateway_integration" "get_user_integration" {
   rest_api_id             = aws_api_gateway_rest_api.user_api.id
@@ -457,6 +533,16 @@ resource "aws_api_gateway_integration" "get_sharing_integration" {
   uri                     = aws_lambda_function.sharing_lambda.invoke_arn
 }
 
+# API Gateway Integration for GET method
+resource "aws_api_gateway_integration" "get_availability_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.user_api.id
+  resource_id             = aws_api_gateway_resource.availability.id
+  http_method             = aws_api_gateway_method.get_availability.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.availability_lambda.invoke_arn
+}
+
 # API Gateway Integration for POST method
 resource "aws_api_gateway_integration" "post_meeting_integration" {
   rest_api_id             = aws_api_gateway_rest_api.user_api.id
@@ -465,6 +551,15 @@ resource "aws_api_gateway_integration" "post_meeting_integration" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.meeting_lambda.invoke_arn
+}
+
+resource "aws_api_gateway_integration" "post_availability_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.user_api.id
+  resource_id             = aws_api_gateway_resource.availability.id
+  http_method             = aws_api_gateway_method.post_availability.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.availability_lambda.invoke_arn
 }
 
 # API Gateway Integration for PUT method
@@ -517,6 +612,15 @@ resource "aws_api_gateway_integration" "delete_sharing_integration" {
   uri                     = aws_lambda_function.sharing_lambda.invoke_arn
 }
 
+resource "aws_api_gateway_integration" "delete_availability_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.user_api.id
+  resource_id             = aws_api_gateway_resource.availability.id
+  http_method             = aws_api_gateway_method.delete_availability.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.availability_lambda.invoke_arn
+}
+
 resource "aws_api_gateway_method" "options_user" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
   resource_id   = aws_api_gateway_resource.user.id
@@ -534,6 +638,13 @@ resource "aws_api_gateway_method" "options_meeting" {
 resource "aws_api_gateway_method" "options_sharing" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
   resource_id   = aws_api_gateway_resource.sharing.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_method" "options_availability" {
+  rest_api_id   = aws_api_gateway_rest_api.user_api.id
+  resource_id   = aws_api_gateway_resource.availability.id
   http_method   = "OPTIONS"
   authorization = "NONE"
 }
@@ -589,6 +700,23 @@ resource "aws_api_gateway_integration" "options_sharing_integration" {
   depends_on = [aws_api_gateway_method.options_sharing]
 }
 
+resource "aws_api_gateway_integration" "options_availability_integration" {
+  rest_api_id          = aws_api_gateway_rest_api.user_api.id
+  resource_id          = aws_api_gateway_resource.availability.id
+  http_method          = aws_api_gateway_method.options_availability.http_method
+  type                 = "MOCK"
+  passthrough_behavior = "WHEN_NO_MATCH"
+  request_templates = {
+    "application/json" = jsonencode(
+      {
+        statusCode = 200
+      }
+    )
+  }
+
+  depends_on = [aws_api_gateway_method.options_availability]
+}
+
 resource "aws_api_gateway_method_response" "options_user_response" {
   rest_api_id = aws_api_gateway_rest_api.user_api.id
   resource_id = aws_api_gateway_resource.user.id
@@ -621,6 +749,20 @@ resource "aws_api_gateway_method_response" "options_sharing_response" {
   rest_api_id = aws_api_gateway_rest_api.user_api.id
   resource_id = aws_api_gateway_resource.sharing.id
   http_method = aws_api_gateway_method.options_sharing.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"     = true
+    "method.response.header.Access-Control-Allow-Methods"     = true
+    "method.response.header.Access-Control-Allow-Origin"      = true
+    "method.response.header.Access-Control-Allow-Credentials" = true
+  }
+}
+
+resource "aws_api_gateway_method_response" "optionsavailability_response" {
+  rest_api_id = aws_api_gateway_rest_api.user_api.id
+  resource_id = aws_api_gateway_resource.availability.id
+  http_method = aws_api_gateway_method.options_availability.http_method
   status_code = "200"
 
   response_parameters = {
@@ -679,6 +821,21 @@ resource "aws_api_gateway_integration_response" "options_sharing_integration_res
   }
 }
 
+resource "aws_api_gateway_integration_response" "options_availability_integration_response" {
+  depends_on = [aws_api_gateway_integration.options_availability_integration]
+
+  rest_api_id = aws_api_gateway_rest_api.user_api.id
+  resource_id = aws_api_gateway_resource.availability.id
+  http_method = aws_api_gateway_method.options_availability.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers"     = "'*'"
+    "method.response.header.Access-Control-Allow-Methods"     = "'GET,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"      = "'*'"
+    "method.response.header.Access-Control-Allow-Credentials" = "'true'"
+  }
+}
 
 # Permission to allow API Gateway to invoke Lambda
 resource "aws_lambda_permission" "allow_api_gateway" {
@@ -702,6 +859,14 @@ resource "aws_lambda_permission" "allow_api_gateway_sharing" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.sharing_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.user_api.execution_arn}/*/*"
+}
+
+resource "aws_lambda_permission" "allow_api_gateway_availability" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.availability_lambda.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.user_api.execution_arn}/*/*"
 }
@@ -771,7 +936,11 @@ resource "aws_api_gateway_deployment" "user_api_deployment" {
     aws_api_gateway_integration.delete_sharing_integration,
     aws_api_gateway_integration.options_sharing_integration,
     aws_api_gateway_integration.put_sharing_integration,
-    aws_api_gateway_integration.get_sharing_integration
+    aws_api_gateway_integration.get_sharing_integration,
+    aws_api_gateway_integration.delete_availability_integration,
+    aws_api_gateway_integration.get_availability_integration,
+    aws_api_gateway_integration.post_availability_integration,
+    aws_api_gateway_integration.options_availability_integration
   ]
   rest_api_id = aws_api_gateway_rest_api.user_api.id
 }
