@@ -96,10 +96,14 @@ def get_user_public(event, headers):
     user_id = query_params.get('user_id')
     
     if not user_id:
+        response = users_table.scan()
+
+        users = response.get('Items', [])
+
         return {
             'headers': headers,
-            'statusCode': 400,
-            'body': json.dumps({'message': 'Bad Request - ID is required'})
+            'statusCode': 200,
+            'body': json.dumps(users)
         }
     
     # Check if user exists in DynamoDB
@@ -116,10 +120,7 @@ def get_user_public(event, headers):
     return {
         'headers': headers,
         'statusCode': 200,
-        'body': json.dumps({
-            'username': user['username'],
-            'profile_pic': user.get('profile_pic', '')
-        })
+        'body': json.dumps(user)
     }
 
 def put_user(event, headers):
