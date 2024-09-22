@@ -1,0 +1,33 @@
+.availability-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* Adjust as needed */
+    grid-template-rows: repeat(8, 1fr); /* Adjust as needed */
+    gap: 10px; /* Optional: space between cells */
+  }
+  
+  .availability-column {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .day-header {
+    font-weight: bold;
+    text-align: center;
+    padding: 5px;
+    background-color: #f0f0f0;
+  }
+  
+  .hour-tick {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ccc; /* Optional: border for each cell */
+    padding: 10px; /* Optional: padding inside each cell */
+    background-color: #f9f9f9; /* Optional: background color for each cell */
+  }
+  
+  .availability-box {
+    background-color: #4caf50; /* Example color for availability */
+    width: 80%;
+    height: 100%;
+  }

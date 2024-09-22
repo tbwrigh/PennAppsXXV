@@ -1,13 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Tabs, Modal } from 'antd';
+import { Button, Tabs, Modal, Card } from 'antd';
 import { ShareAltOutlined, EditOutlined, ArrowLeftOutlined, CalendarOutlined } from '@ant-design/icons';
 import ShareForm from '../components/ShareForm'; // Import the ShareForm component
 import AvailabilityForm from '../components/AvailabilityForm';
+import Grid from '../components/Grid';
 import './Meeting.css';
 import MeetingInfo from '../types/MeetingInfo';
 import { MeetingClient } from '../controllers/MeetingClient';
 import { UserClient } from '../controllers/UserClient';
+import { DownOutlined } from '@ant-design/icons';
+import type { MenuProps } from 'antd';
+import { Dropdown, Space } from 'antd';
+
+const items: MenuProps['items'] = [
+  {
+    label: <a>12/1</a>,
+    key: '0',
+  },
+  {
+    label: <a>12/3</a>,
+    key: '1',
+  },
+  {
+    label: <a>12/4</a>,
+    key: '2',
+  },
+  {
+    label: <a>12/6</a>,
+    key: '3',
+  },
+];
 
 const Meeting: React.FC = () => {
   const { id } = useParams<{ id: string }>(); // Get the meeting ID from the route
@@ -138,6 +161,21 @@ const Meeting: React.FC = () => {
             <p>{meeting.description}</p>
           </Tabs.TabPane>
         </Tabs>
+        
+        Dropdown for Date Selection
+        <Card title="Select a Date" className="date-dropdown">
+        <div className="dropdown">
+        <Dropdown menu={{ items }} trigger={['click']}>
+          <a onClick={(e) => e.preventDefault()}>
+            <Space>
+              Choose a date: Click me
+              <DownOutlined />
+            </Space>
+          </a>
+        </Dropdown>
+        </div>
+        <Grid />
+        </Card> 
 
         {/* Modal for Share Form */}
         <Modal

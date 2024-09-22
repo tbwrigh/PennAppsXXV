@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { List, Card, Button } from 'antd';
 import { PlusOutlined, RightOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import ThemeToggle from '../components/ThemeToggle';
 
 import { UserClient } from '../controllers/UserClient';
 import User from '../types/User';
@@ -62,7 +61,6 @@ const Home: React.FC = () => {
     <div className="user-home">
       <div className="meeting-headers">
         <h1 style={{ marginLeft: '10vw' }}>{ loading ? '' : userInfo?.username } Meetings</h1>
-        <ThemeToggle />{}
         <Button type="primary" className="new-meeting-button" icon={<PlusOutlined />} onClick={newMeetingClick}>New Meeting</Button>
       </div>
       

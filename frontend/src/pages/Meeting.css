@@ -3,7 +3,7 @@
     display: flex;
     justify-content: center;
     padding: 20px;
-    overflow: hidden;
+    overflow-y: scroll;
     background-color: #f0f2f5;
     height: 100vh;
   }
@@ -94,5 +94,10 @@
   
   .timeTabHeader button {
     margin-left: 2rem;            /* Ensure the button stays on the right */
+  }
+
+  .dropdown {
+    align-items: center;
+    margin-right: 10rem;
   }
   
