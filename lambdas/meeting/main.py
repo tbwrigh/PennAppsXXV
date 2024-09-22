@@ -7,6 +7,7 @@ import uuid
 dynamodb = boto3.resource('dynamodb')
 users_table = dynamodb.Table('pennapps-user-table')
 meetings_table = dynamodb.Table('pennapps-meeting-table')
+joins_table = dynamodb.Table('pennapps-user-meeting-table')
 
 def lambda_handler(event, context):
     print(event)
@@ -58,43 +59,207 @@ def get_meeting(event, headers):
     auth_token = event['headers']['Authorization']
     user = get_user_from_token(auth_token)
 
+    joins = joins_table.query(
+        IndexName='UserIndex',
+        KeyConditionExpression=boto3.dynamodb.conditions.Key('user_id').eq(user['user_id'])
+    )
+
+    meeting_ids = [join['meeting_id'] for join in joins['Items']]
+
+    response = meetings_table.scan(
+        FilterExpression=boto3.dynamodb.conditions.Attr('meeting_id').is_in(meeting_ids)
+    )
+
+    meetings = response.get('Items', [])
+
     return {
             'headers': headers,
             'statusCode': 200,
-            'body': json.dumps({})
+            'body': json.dumps(meetings)
         }
 
 def post_meeting(event, headers):
     auth_token = event['headers']['Authorization']    
     user = get_user_from_token(auth_token)
     body = json.loads(event['body'])
+
+    name = body['name']
+    description = body['description']
+    days = body['days']  # Assuming days are passed in 'YYYY-MM-DD' string format
+    start_time = body['start_time']  # Assuming start_time in 'HH:MM:SS' format
+    end_time = body['end_time']  # Assuming end_time in 'HH:MM:SS' format
+
+    meeting_id = str(uuid.uuid4())
+    owner = user['user_id']
+
+    response = meetings_table.put_item(
+        Item = {
+            'meeting_id': meeting_id,
+            'name': name,
+            'description': description,
+            'days': days,  # Array of dates as strings
+            'start_time': start_time,
+            'end_time': end_time,
+            'owner': owner
+        }
+    )
+    
+    response2 = joins_table.put_item(
+        Item = {
+            'join_id': str(uuid.uuid4()),
+            'user_id': owner,
+            'meeting_id': meeting_id
+        }
+    )
     
     return {
         'headers': headers,
         'statusCode': 200,
-        'body': json.dumps({})
+        'body': json.dumps({
+            'message': 'Meeting successfully created',
+            'meeting_id': meeting_id
+        })
     }
 
 def put_meeting(event, headers):
     auth_token = event['headers']['Authorization']    
     user = get_user_from_token(auth_token)
-    body = json.loads(event['body'])
     
-    return {
-        'headers': headers,
-        'statusCode': 200,
-        'body': json.dumps({})
-    }
+    body = json.loads(event['body'])
+
+    meeting_id = body['meeting_id']
+
+    meeting = meetings_table.get_item(Key={'meeting_id': meeting_id})
+
+    if "Item" not in meeting:
+        return {
+            'headers': headers,
+            'statusCode': 404,
+            'body': json.dumps({"message": "meeting not found"})
+        }
+
+    if user['user_id'] != meeting['Item'].get("owner"):
+        return {
+            'headers': headers,
+            'statusCode': 401,
+            'body': json.dumps({"message": "you're not the owner"})
+        }
+
+    name = body.get('name')
+    description = body.get('description')
+    days = body.get('days')
+    start_time = body.get('start_time')
+    end_time = body.get('end_time')
+
+    update_expression = "SET "
+    expression_attribute_values = {}
+    
+    if name:
+        update_expression += "name = :n, "
+        expression_attribute_values[':n'] = name
+    if description:
+        update_expression += "description = :d, "
+        expression_attribute_values[':d'] = description
+    if days:
+        update_expression += "days = :ds, "
+        expression_attribute_values[':ds'] = days
+    if start_time:
+        update_expression += "start_time = :st, "
+        expression_attribute_values[':st'] = start_time
+    if end_time:
+        update_expression += "end_time = :et, "
+        expression_attribute_values[':et'] = end_time
+
+    # Remove the last trailing comma and space
+    update_expression = update_expression.rstrip(", ")
+
+    try:
+        response = meetings_table.update_item(
+            Key={
+                'meeting_id': meeting_id
+            },
+            UpdateExpression=update_expression,
+            ExpressionAttributeValues=expression_attribute_values,
+            ReturnValues="UPDATED_NEW"
+        )
+
+        return {
+            'headers': headers,
+            'statusCode': 200,
+            'body': json.dumps({
+                'message': 'Meeting successfully updated',
+                'updatedAttributes': response['Attributes']
+            })
+        }
+    except Exception as e:
+        return {
+            'headers': headers,
+            'statusCode': 500,
+            'body': json.dumps({
+                'error': str(e)
+            })
+        }
 
 def delete_meeting(event, headers):
     auth_token = event['headers']['Authorization']
     user = get_user_from_token(auth_token)
 
-    return {
+    body = json.loads(event['body'])
+
+    meeting_id = body['meeting_id']
+
+    meeting = meetings_table.get_item(Key={'meeting_id': meeting_id})
+
+    if "Item" not in meeting:
+        return {
+            'headers': headers,
+            'statusCode': 404,
+            'body': json.dumps({"message": "meeting not found"})
+        }
+
+    if user['user_id'] != meeting['Item'].get("owner"):
+        return {
+            'headers': headers,
+            'statusCode': 401,
+            'body': json.dumps({"message": "you're not the owner"})
+        }
+    
+    try:
+
+        meetings_table.delete_item(
+            Key={'meeting_id': meeting_id},
+            ConditionExpression="attribute_exists(meeting_id)"
+        )
+
+        joins = joins_table.query(
+            IndexName='MeetingIndex',
+            KeyConditionExpression=boto3.dynamodb.conditions.Key('meeting_id').eq(meeting_id)
+        )
+
+        if "Items" in joins:
+            for join in joins['Items']:
+                joins_table.delete_item(
+                    Key={'join_id': join['join_id']},
+                    ConditionExpression="attribute_exists(join_id)"
+                )
+
+        return {
             'headers': headers,
             'statusCode': 200,
-            'body': json.dumps({})
+            'body': json.dumps({
+                'message': 'Meeting successfully deleted',
+                'meeting_id': meeting_id
+            })
         }
+    except Exception as e:
+        return {
+            'headers': headers,
+            'statusCode': 500,
+            'body': json.dumps({
+                'error': str(e)
+            })
+        }
+
 
 def get_user_from_token(token):
     decoded_token = decode_jwt_token(token)
