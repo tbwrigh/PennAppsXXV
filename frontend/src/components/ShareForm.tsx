@@ -21,7 +21,7 @@ const ShareForm: React.FC<ShareFormProps> = ({ clearSelect, resetClearSelect, on
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const userClient = new UserClient();
   const sharingClient = new SharingClient();
-  let cacheBuster = 0;
+  const [cacheBuster, setCacherBuster] = useState(1);
 
   const handleSelectChange = (value: string[]) => {
     setSelectedEmails(Array.isArray(value) ? value : []); // Ensure it's an array
@@ -62,7 +62,7 @@ const ShareForm: React.FC<ShareFormProps> = ({ clearSelect, resetClearSelect, on
 
   const handleRemoveExistingShare = (user_id: string) => {
     sharingClient.unshareMeeting(user_id, meeting_id);
-    cacheBuster += 1;
+    setCacherBuster(cacheBuster+1);
   };
 
   const handleShareClick = () => {
@@ -74,7 +74,7 @@ const ShareForm: React.FC<ShareFormProps> = ({ clearSelect, resetClearSelect, on
         }
       }
     }
-    cacheBuster += 1;
+    setCacherBuster(cacheBuster+1);
     onShare(selectedEmails);
   };
 
