@@ -17,10 +17,7 @@ const days = [
   { date: 'Thu 15', day: 'Thursday' },
   { date: 'Fri 16', day: 'Friday' },
   { date: 'Sat 17', day: 'Saturday' },
-  { date: 'Sun 18', day: 'Sunday' },
-  { date: 'Mon 27', day: 'Monday' },
-  { date: 'Thu 1', day: 'Thursday' },
-  { date: 'Fri 12', day: 'Friday' },
+  { date: 'Sun 18', day: 'Sunday' }
 ];
 
 const hours = Array.from({ length: 24 }, (_, i) => i); // Generate hours from 0 to 23
