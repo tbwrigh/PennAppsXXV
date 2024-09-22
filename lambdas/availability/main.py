@@ -57,23 +57,41 @@ def get_available(event, headers):
     auth_token = event['headers']['Authorization']
     user = get_user_from_token(auth_token)
 
+    query_params = event.get('queryStringParameters', {})
+    meeting_id = query_params.get('meeting_id')
+
+    if not meeting_id:
+        return {
+            'headers': headers,
+            'statusCode': 404,
+            'body': json.dumps({
+                'message': 'message_id required'
+            })
+        }
+
     joins = joins_table.query(
-        IndexName='UserIndex',
-        KeyConditionExpression=boto3.dynamodb.conditions.Key('user_id').eq(user['user_id'])
+        IndexName='MeetingIndex',
+        KeyConditionExpression=boto3.dynamodb.conditions.Key('meeting_id').eq(meeting_id)
     )
 
-    meeting_ids = [join['meeting_id'] for join in joins['Items']]
+    shares = joins.get('Items', [])
 
-    response = meetings_table.scan(
-        FilterExpression=boto3.dynamodb.conditions.Attr('meeting_id').is_in(meeting_ids)
-    )
+    availability = []
 
-    meetings = response.get('Items', [])
+    for share in shares:
+        available_list = share.get('available', [])
+        for slot in available_list:
+            availability.append({
+                "user_id": share.user_id,
+                "day": slot[0],
+                "start_time": slot[1],
+                "end_time": slot[2]
+            })
 
     return {
             'headers': headers,
             'statusCode': 200,
-            'body': json.dumps(meetings)
+            'body': json.dumps(availability)
         }
 
 def post_available(event, headers):
@@ -81,102 +99,145 @@ def post_available(event, headers):
     user = get_user_from_token(auth_token)
     body = json.loads(event['body'])
 
-    name = body['name']
-    description = body['description']
-    days = body['days']  # Assuming days are passed in 'YYYY-MM-DD' string format
-    start_time = body['start_time']  # Assuming start_time in 'HH:MM:SS' format
-    end_time = body['end_time']  # Assuming end_time in 'HH:MM:SS' format
+    day = body['day']
+    start_time = body['start_time']
+    end_time = body['end_time']
 
-    meeting_id = str(uuid.uuid4())
-    owner = user['user_id']
+    meeting_id = body['meeting_id']
 
-    response = meetings_table.put_item(
-        Item = {
-            'meeting_id': meeting_id,
-            'name': name,
-            'description': description,
-            'days': days,  # Array of dates as strings
-            'start_time': start_time,
-            'end_time': end_time,
-            'owner': owner
+    joins = joins_table.query(
+        IndexName='MeetingIndex',
+        KeyConditionExpression=boto3.dynamodb.conditions.Key('meeting_id').eq(meeting_id)
+    )
+
+    join_id = ''
+    for join in joins:
+        if join.user_id == user.id:
+            join_id = join.join_id
+            break  
+
+    if join_id == '':
+        return {
+            'headers': headers,
+            'statusCode': 401,
+            'body': json.dumps({"message": "not shared with you"})
+        }
+
+    response = joins_table.get_item(
+        Key={
+            'join_id': join_id
         }
     )
     
-    response2 = joins_table.put_item(
-        Item = {
-            'join_id': str(uuid.uuid4()),
-            'user_id': owner,
-            'meeting_id': meeting_id
-        }
-    )
+    # Check if the item exists
+    item = response.get('Item')
     
-    return {
-        'headers': headers,
-        'statusCode': 200,
-        'body': json.dumps({
-            'message': 'Meeting successfully created',
-            'meeting_id': meeting_id
-        })
-    }
+    if item:
+        # Get the existing 'available' list or initialize an empty one
+        available_list = item.get('available', [])
+        
+        # Create the new entry
+        new_entry = [day, start_time, end_time]
+        
+        # Append the new entry to the available list
+        available_list.append(new_entry)
+        
+        # Update the item in DynamoDB with the new 'available' list
+        joins.update_item(
+            Key={
+                'join_id': join_id
+            },
+            UpdateExpression="SET available = :available_list",
+            ExpressionAttributeValues={
+                ':available_list': available_list
+            }
+        )
+        
+        return {
+            'headers': headers,
+            'statusCode': 200,
+            'body': json.dumps({"message": "successfully added"})
+        }
+    
+    else:
+
+        return {
+            'headers': headers,
+            'statusCode': 400,
+            'body': json.dumps({"message": 'failed to add'})
+        }
+  
 
 def delete_available(event, headers):
     auth_token = event['headers']['Authorization']
     user = get_user_from_token(auth_token)
 
     body = json.loads(event['body'])
+    day = body['day']
+    start_time = body['start_time']
+    end_time = body['end_time']
 
     meeting_id = body['meeting_id']
 
-    meeting = meetings_table.get_item(Key={'meeting_id': meeting_id})
+    joins = joins_table.query(
+        IndexName='MeetingIndex',
+        KeyConditionExpression=boto3.dynamodb.conditions.Key('meeting_id').eq(meeting_id)
+    )
 
-    if "Item" not in meeting:
-        return {
-            'headers': headers,
-            'statusCode': 404,
-            'body': json.dumps({"message": "meeting not found"})
-        }
+    join_id = ''
+    for join in joins:
+        if join.user_id == user.id:
+            join_id = join.join_id
+            break  
 
-    if user['user_id'] != meeting['Item'].get("owner"):
+    if join_id == '':
         return {
             'headers': headers,
             'statusCode': 401,
-            'body': json.dumps({"message": "you're not the owner"})
+            'body': json.dumps({"message": "not shared with you"})
         }
+
+    response = joins_table.get_item(
+        Key={
+            'join_id': join_id
+        }
+    )
     
-    try:
-
-        meetings_table.delete_item(
-            Key={'meeting_id': meeting_id},
-            ConditionExpression="attribute_exists(meeting_id)"
+    # Check if the item exists
+    item = response.get('Item')
+    
+    if item:
+        # Get the existing 'available' list or initialize an empty one
+        available_list = item.get('available', [])
+        
+        # Create the new entry
+        available_list = [l for l in available_list if (l[0] != day or l[1] != start_time or l[2] != end_time)]
+        
+        # Update the item in DynamoDB with the new 'available' list
+        joins.update_item(
+            Key={
+                'join_id': join_id
+            },
+            UpdateExpression="SET available = :available_list",
+            ExpressionAttributeValues={
+                ':available_list': available_list
+            }
         )
-
-        joins = joins_table.query(
-            IndexName='MeetingIndex',
-            KeyConditionExpression=boto3.dynamodb.conditions.Key('meeting_id').eq(meeting_id)
-        )
-
-        if "Items" in joins:
-            for join in joins['Items']:
-                joins_table.delete_item(
-                    Key={'join_id': join['join_id']},
-                    ConditionExpression="attribute_exists(join_id)"
-                )
-
+        
         return {
             'headers': headers,
             'statusCode': 200,
-            'body': json.dumps({
-                'message': 'Meeting successfully deleted'
-            })
+            'body': json.dumps({"message": "successfully added"})
         }
-    except Exception as e:
+    
+    else:
+
         return {
             'headers': headers,
-            'statusCode': 500,
-            'body': json.dumps({
-                'message': str(e)
-            })
+            'statusCode': 400,
+            'body': json.dumps({"message": 'failed to add'})
         }
+    
 
 
 def get_user_from_token(token):
