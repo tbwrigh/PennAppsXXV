@@ -36,7 +36,7 @@ def lambda_handler(event, context):
         http_method = event['httpMethod']
 
         if http_method == 'GET':
-            if 'Authorization' in event['headers']:
+            if 'Authorization' in event.get('headers', {}):
                 return get_user_private(event, headers)
             else:
                 return get_user_public(event, headers)

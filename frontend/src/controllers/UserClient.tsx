@@ -22,7 +22,8 @@ export class UserClient extends ApiClient {
     }
 
     public async getPublicUsers(): Promise<User[]> {
-      return this.fetchUnauthenticated(this.endpoint, 'GET') as Promise<User[]>;
+      const queryParams = { all: 1 };
+      return this.fetchUnauthenticated(this.endpoint, 'GET', null, queryParams) as Promise<User[]>;
     }
   }
   
