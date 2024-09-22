@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar, Dropdown, Menu } from 'antd';
 import { SettingOutlined, CalendarOutlined, UserOutlined, PlusOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -6,10 +6,32 @@ import './Navigation.css';
 
 import { WithAuthenticatorProps } from '@aws-amplify/ui-react'
 
-
+import { UserClient } from '../controllers/UserClient';
+import User from '../types/User';
 
 const Navigation: React.FC<WithAuthenticatorProps> = ({ signOut }) => {
   const navigate = useNavigate();
+  const userClient = new UserClient();
+
+  const [userInfo, setUserInfo] = useState<User|null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const defaultImg = "https://static-00.iconduck.com/assets.00/profile-default-icon-512x511-v4sw4m29.png";
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await userClient.getSelf();
+        setUserInfo(user); // Set the username from the response
+        setLoading(false); // Set loading to false after the data is fetched
+      } catch (err) {
+        setLoading(false); // Stop loading even if there is an error
+      }
+    };
+
+    fetchUser();  
+  }, [])
+
 
   const handleMenuClick = (e: any) => {
     if (e.key === 'create') {
@@ -53,7 +75,7 @@ const Navigation: React.FC<WithAuthenticatorProps> = ({ signOut }) => {
           <div className="user-avatar">
       <Avatar
               size="large"
-              src="https://i.pravatar.cc/300"
+              src={(!loading && userInfo?.profile_pic) ? userInfo.profile_pic : defaultImg}
               alt="User Avatar"
               icon={<UserOutlined />}
             />
