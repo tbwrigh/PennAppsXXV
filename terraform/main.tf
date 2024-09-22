@@ -215,10 +215,6 @@ resource "aws_api_gateway_integration" "put_user_integration" {
   uri                     = aws_lambda_function.user_profile_lambda.invoke_arn
 }
 
-
-
-
-
 resource "aws_api_gateway_method" "options_user" {
   rest_api_id   = aws_api_gateway_rest_api.user_api.id
   resource_id   = aws_api_gateway_resource.user.id
@@ -239,7 +235,6 @@ resource "aws_api_gateway_integration" "options_user_integration" {
       }
     )
   }
-
 
   depends_on = [aws_api_gateway_method.options_user]
 }
@@ -274,11 +269,6 @@ resource "aws_api_gateway_integration_response" "options_user_integration_respon
     "method.response.header.Access-Control-Allow-Credentials" = "'true'"
   }
 }
-
-
-
-
-
 
 # Permission to allow API Gateway to invoke Lambda
 resource "aws_lambda_permission" "allow_api_gateway" {

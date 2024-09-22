@@ -155,6 +155,10 @@ def put_user(event, headers):
         update_expression += "username = :u,"
         expression_attribute_values[':u'] = body['username']
     
+    if 'profile_pic' in body:
+        update_expression += "profile_pic = :p,"
+        expression_attribute_values[':p'] = body['profile_pic']
+    
     update_expression = update_expression.rstrip(',')
     users_table.update_item(
         Key={'user_id': user['user_id']},

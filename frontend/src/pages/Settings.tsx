@@ -1,27 +1,45 @@
-import React, { useState } from 'react';
-import { Form, Input, Button, Upload, Avatar, message } from 'antd';
-import { UploadOutlined, UserOutlined } from '@ant-design/icons';
+import React, { useEffect } from 'react';
+import { Form, Input, Button, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import './Settings.css';
 
+import { UserClient } from '../controllers/UserClient';
+
+interface SettingFormValues {
+  name: string;
+  pfp_url: string;
+}
+
 const Settings: React.FC = () => {
   const [form] = Form.useForm();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleAvatarChange = (info: any) => {
-    if (info.file.status === 'done') {
-      message.success(`${info.file.name} file uploaded successfully`);
-      setAvatarUrl(URL.createObjectURL(info.file.originFileObj));
-    } else if (info.file.status === 'error') {
-      message.error(`${info.file.name} file upload failed.`);
-    }
-  };
+  const userClient = new UserClient();
 
-  const handleFinish = (values: any) => {
-    message.success('Profile updated successfully!');
-    // Add your update logic here
-    console.log(values);
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await userClient.getSelf();
+
+        // Set form fields with the fetched user info
+        if (user) {
+          form.setFieldsValue({
+            name: user.username,
+            pfp_url: user.profile_pic, // Assuming userInfo has a field called profile_pic
+          });
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchUser();  
+  }, [form]);
+
+  const handleFinish = (values: SettingFormValues) => {
+    const { name, pfp_url } = values;
+    userClient.putUser(name, pfp_url);
+    // navigate('/');
   };
 
   const handleCancel = () => {
@@ -38,52 +56,24 @@ const Settings: React.FC = () => {
           onFinish={handleFinish}
           className="settings-form"
         >
-          {/* Profile Picture Upload */}
-          <Form.Item className="center-content">
-            <Avatar
-              size={100}
-              src={avatarUrl}
-              icon={<UserOutlined />}
-              className="avatar"
-            />
-            <Upload
-              name="avatar"
-              showUploadList={false}
-              onChange={handleAvatarChange}
-              className="upload-button"
-            >
-              <Button icon={<UploadOutlined />}>Change Profile Picture</Button>
-            </Upload>
+
+
+          {/* Profile Picture URL */}
+          <Form.Item
+            label="Profile Picture Url"
+            name="pfp_url"
+            rules={[{ required: false, message: 'Please input a url to an image' }]}
+          >
+            <Input placeholder="Image Url" />
           </Form.Item>
 
           {/* Name Change */}
           <Form.Item
             label="Name"
             name="name"
-            rules={[{ required: true, message: 'Please input your name' }]}
+            rules={[{ required: false, message: 'Please input your name' }]}
           >
             <Input placeholder="Enter your name" />
-          </Form.Item>
-
-          {/* Email Change */}
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[
-              { required: true, message: 'Please input your email' },
-              { type: 'email', message: 'Please enter a valid email' }
-            ]}
-          >
-            <Input placeholder="Enter your email" />
-          </Form.Item>
-
-          {/* Password Change */}
-          <Form.Item
-            label="Password"
-            name="password"
-            rules={[{ required: true, message: 'Please input your new password' }]}
-          >
-            <Input.Password placeholder="Enter new password" />
           </Form.Item>
 
           {/* Submit and Cancel Buttons */}
@@ -94,7 +84,7 @@ const Settings: React.FC = () => {
             <Button type="default" onClick={handleCancel}>
               Cancel
             </Button>
-            </div>
+          </div>
         </Form>
       </div>
     </div>

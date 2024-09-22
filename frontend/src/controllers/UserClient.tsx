@@ -5,8 +5,8 @@ export class UserClient extends ApiClient {
     private readonly endpoint = '/user';
   
     // Authenticated PUT method that only takes a username
-    public async putUser(username: string): Promise<User> {
-      const data = { username: username };
+    public async putUser(username: string, pfp_url: string): Promise<User> {
+      const data = { username: username, profile_pic: pfp_url };
       return this.fetchAuthenticated(this.endpoint, 'PUT', data) as Promise<User>;
     }
   
