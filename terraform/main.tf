@@ -128,6 +128,10 @@ resource "aws_iam_policy" "lambda_dynamodb_s3_policy" {
         "Resource" : [
           aws_dynamodb_table.user_table.arn,
           "${aws_dynamodb_table.user_table.arn}/index/*",
+          aws_dynamodb_table.meeting_table.arn,
+          "${aws_dynamodb_table.meeting_table.arn}/index/*",
+          aws_dynamodb_table.user_meeting_table.arn,
+          "${aws_dynamodb_table.user_meeting_table.arn}/index/*",
           "${aws_s3_bucket.user_profile_bucket.arn}/*"
         ]
       }

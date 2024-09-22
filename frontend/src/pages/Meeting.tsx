@@ -5,31 +5,40 @@ import { ShareAltOutlined, EditOutlined, ArrowLeftOutlined, CalendarOutlined } f
 import ShareForm from '../components/ShareForm'; // Import the ShareForm component
 import AvailabilityForm from '../components/AvailabilityForm';
 import './Meeting.css';
-
-// Mock meeting data
-const meetings = [
-  { id: '1', title: 'Team Sync', owner: 'user1', time: '10:00 AM', location: 'Room A', cost: 'Free', notes: 'Bring your laptops.' },
-  { id: '2', title: 'Project Review', owner: 'user2', time: '12:00 PM', location: 'Room B', cost: '$50', notes: 'Discuss project updates.' },
-  { id: '3', title: 'Client Call', owner: 'user1', time: '2:00 PM', location: 'Zoom', cost: 'Free', notes: 'Zoom link will be shared.' },
-  { id: '4', title: 'Design Discussion', owner: 'user3', time: '4:00 PM', location: 'Room C', cost: 'Free', notes: 'Brainstorm design ideas.' },
-];
+import MeetingInfo from '../types/MeetingInfo';
+import { MeetingClient } from '../controllers/MeetingClient';
 
 // Mock current logged-in user
 const currentUser = 'user1';
 
 const Meeting: React.FC = () => {
   const { id } = useParams<{ id: string }>(); // Get the meeting ID from the route
-  const [meeting, setMeeting] = useState<any | null>(null);
+  const [meeting, setMeeting] = useState<MeetingInfo|null>(null);
+  const [meetings, setMeetings] = useState<MeetingInfo[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false); // Modal visibility state
   const [clearSelect, setClearSelect] = useState(false); // State to clear the Select component
   const [isAvailabilityModalVisible, setAvailabilityModalVisible] = useState(false);
   const navigate = useNavigate(); // Used for the back button
+  const meetingClient = new MeetingClient();
+
+  useEffect(() => {
+    const fetchMeetings = async () => {
+      try {
+        const m = await meetingClient.getMeetings();
+        setMeetings(m);
+      } catch (err) {
+        console.log("failed to load meetings")
+      }
+    };
+
+    fetchMeetings();
+  }, []);
 
   useEffect(() => {
     // Find the meeting by ID (mocked)
-    const foundMeeting = meetings.find(meeting => meeting.id === id);
+    const foundMeeting = meetings.find(meeting => meeting.meeting_id === id);
     setMeeting(foundMeeting || null);
-  }, [id]);
+  }, [id, meetings]);
 
   if (!meeting) {
     return <div>Meeting not found</div>;
@@ -76,7 +85,7 @@ const Meeting: React.FC = () => {
           <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/')} className="back-button">
             Back
           </Button>
-          <h1>{meeting.title}</h1>
+          <h1>{meeting.name}</h1>
           <div className="meeting-actions">
             <Button type="default" icon={<ShareAltOutlined />} onClick={showModal}>
               Share
@@ -100,13 +109,13 @@ const Meeting: React.FC = () => {
             </div>
           </Tabs.TabPane>
           <Tabs.TabPane tab="Location" key="2">
-            <p>{meeting.location}</p>
+            <p>Location</p>
           </Tabs.TabPane>
           <Tabs.TabPane tab="Cost" key="3">
-            <p>{meeting.cost}</p>
+            <p>Cost</p>
           </Tabs.TabPane>
           <Tabs.TabPane tab="Notes" key="4">
-            <p>{meeting.notes}</p>
+            <p>{meeting.description}</p>
           </Tabs.TabPane>
         </Tabs>
 
