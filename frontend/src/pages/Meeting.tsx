@@ -122,7 +122,7 @@ const Meeting: React.FC = () => {
           visible={isAvailabilityModalVisible}
           footer={null} // No footer needed for this modal
           onCancel={handleAvailabilityModalClose}
-          width={800} // Set the modal width to accommodate the grid
+          width="100vw" // Set the modal width to accommodate the grid
           style={{ backgroundColor: '#fafafa' }}
         >
           <AvailabilityForm />

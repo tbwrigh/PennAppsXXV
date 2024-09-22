@@ -18,6 +18,9 @@ const days = [
   { date: 'Fri 16', day: 'Friday' },
   { date: 'Sat 17', day: 'Saturday' },
   { date: 'Sun 18', day: 'Sunday' },
+  { date: 'Mon 27', day: 'Monday' },
+  { date: 'Thu 1', day: 'Thursday' },
+  { date: 'Fri 12', day: 'Friday' },
 ];
 
 const hours = Array.from({ length: 24 }, (_, i) => i); // Generate hours from 0 to 23
@@ -40,11 +43,6 @@ const AvailabilityForm: React.FC = () => {
     const currentDayAvailability = availability.filter(a => a.day === day); // Load availability for this day
     setUnsavedAvailability([...currentDayAvailability]); // Load unsaved availability (editable)
   };
-
-  // Handle time range change
-//   const handleTimeRangeChange = (times: [Dayjs | null, Dayjs | null]) => {
-//     setTimeRange(times); // Use Dayjs for timeRange
-//   };
 
   const handleTimeRangeChange = (dates: [Dayjs | null, Dayjs | null] | null) => {
     setTimeRange(dates ?? [null, null]); // If dates are null, set to [null, null]
@@ -84,7 +82,7 @@ const AvailabilityForm: React.FC = () => {
       <div className="availability-grid">
         <div className="time-column">
         {hours.map((hour) => (
-            <div className="time-slot" key={hour}>
+            <div className="time-slot1" key={hour}>
               {formatHour(hour)}
             </div>
           ))}
